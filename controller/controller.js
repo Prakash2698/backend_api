@@ -1,10 +1,14 @@
 const newuserSchema = require("../model/model");
 const bcrypt = require("bcrypt"); // Import the bcrypt library
+const mongoose = require('mongoose');
 
 const common = require("../config/common");
 const helper = require("../helper/helper");
 const OtpSchema = require("../model/otp");
 const productList = require("../model/admin/addProduct")
+const kycSchema = require("../model/kyc");
+const user1Schema = require("../model/user1");
+const Product = require("../model/admin/addProduct");
 
 const createuser = async (req, res) => {
     try {
@@ -164,6 +168,108 @@ const getProduct = async (req, res) => {
     }
 
 }
+// const profile = async (req, res) => {
+//     try {
+//         const userId = req.params._id;
+//         // console.log(userId,">>>>>>>>>>>>>>>>>>>>.");
+//         // Use the `populate` method to fetch books with author details
+//         const userProfile = await newuserSchema.find({ _id: userId }).populate('kyc');
+//         console.log(userProfile,">>>>>>>>>>>>>>>....");
+//         if(!userProfile){
+//             res.send({sucess:false,message:"profile_not_found"})
+//         }
+//         res.send({status:200 ,sucess:true ,result : userProfile});
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'An error occurred' });
+//     }
+// }
+
+// =============================================================================
+
+
+// const profile = async (req, res) => {
+//     try {
+//       const userId = req.params.userId; // Assuming you pass the user's _id as a parameter
+
+//       const userProfile = await newuserSchema.aggregate([
+//         {
+//           $match: {
+//             _id:new mongoose.Types.ObjectId(userId),
+//           },
+//         },
+//         {
+//           $lookup: {
+//             from: "kyc", // Name of the KYC collection
+//             localField: "_id", // Field in the User collection
+//             foreignField: "userId", // Field in the KYC collection
+//             as: "kycData",
+//           },
+//         },
+//       ]);
+//   console.log(">>>>>>>>>>>>>",userProfile);
+//       if (userProfile.length > 0) {
+//         // userProfile[0] contains the user's profile data
+//         res.status(200).json({ success: true, data: userProfile[0] });
+//       } else {
+//         res.status(404).json({ success: false, message: "User profile not found" });
+//       }
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ success: false, message: "An error occurred" });
+//     }
+//   };
+
+const profile = async (req, res) => {
+    try {
+        const userId = req.params.userId
+        console.log(">>>>>>>>>>>>>>>>>>>",userId);
+        const user = await newuserSchema.findById({ _id: userId });
+        const kycData = await kycSchema.findOne({ userId: userId });
+
+        if (user && kycData) {
+            const userProfile = {
+                user,
+                kycData,
+            };
+            // Return userProfile
+            res.send({sucess:true,message:"find_user_profile",userProfile})
+        } else {            
+            // Handle the case where user or kycData is not found
+            res.send({sucess:false,message:"user_not_found"})
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+// =================================================
+const user1 = async(req,res)=>{
+      try {
+        const { userId, productId, quantity } = req.body;
+        // Retrieve product details
+        const product = await Product.findById(productId);
+      
+        if (!product) {
+          return res.status(404).json({ message: "Product not found" });
+        }      
+        // Calculate total price
+        const totalPrice = product.productPrice * quantity;
+      
+        // Create a new order
+        const order = new user1Schema({
+          userId,
+          productId,
+          quantity,
+          totalPrice,
+        });
+      
+        const savedOrder = await order.save();
+        res.status(201).json(savedOrder);
+        
+      } catch (error) {
+        console.log(error);
+      }   
+  };
 
 
 
@@ -172,5 +278,7 @@ module.exports = {
     verifyotp,
     login,
     resendOTP,
-    getProduct
+    getProduct,
+    profile,
+    user1
 }

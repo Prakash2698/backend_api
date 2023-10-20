@@ -19,7 +19,7 @@ const kycSchema = new mongoose.Schema({
         required: true,
     },
     panImage: {
-        type: 250970,
+        type: Buffer,
         required: true,
     },
     status: {

@@ -31,10 +31,15 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: 'inactive'
 }  ,
+// kyc: {
+//   type: mongoose.Schema.Types.ObjectId,
+//   ref: 'kyc' // Reference to the 'get_profile' model
+// },
   created: {
     type: Date,
     default: Date.now
-  }
+  },
+
 });
 userSchema.methods.comparePassword = function(password) {
   return bcrypt.compareSync(password, this.hash_password);

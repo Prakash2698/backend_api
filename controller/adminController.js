@@ -3,9 +3,7 @@ const userSchema = require("../model/adminAddUser");
 const verifyKyc = require("../model/kyc");
 const product = require('../model/admin/addProduct');
 var mongoose = require('mongoose');
-//  var str = '578df3efb618f5141202a196';
-//  var mongoObjectId = mongoose.Types.ObjectId(str);
-// ObjectId(userId)
+
 
 const userget = async (req, res) => {
     try {
@@ -126,40 +124,39 @@ const verifyKycByAdmin = async (req, res) => {
         res.status(400).send({ status: 400, message: error.message });
     }
 };
+// const addProduct = async (req, res) => {
+//     try {
+//         const { productName, productPrice, quantity } = req.body; // Destructure the request body
+        
+//        const  productImage = req.files.productImage;
+//         // Check if the email already exists in the database using the check.findUser function
+//         const find = await product.findOne({ productName: productName });
+
+//         if (find) {
+//             res.status(201).send({ success: false, msg: "product already exists" });
+//         } else {
+//             // Create a add product  instance using the Mongoose model
+//             const add_product = new product({
+//                 productName,
+//                 productImage,
+//                 productPrice,
+//                 quantity  
+//             });
+//             // console.log(">>>>>>>>>>>>>>>>>>...",add_product);
+//             // Save the new user to the database
+//             const addProduct = await add_product.save();
+//             console.log(addProduct, "product add in database");
+//             res.status(200).send({ success: true, result: addProduct });
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         res.status(400).send({ status: 400, message: "product add faield" });
+//     }
+// };
+
 const addProduct = async (req, res) => {
     try {
-        const { productName, productPrice, quantity } = req.body; // Destructure the request body
-        
-       const  productImage = req.files.productImage;
-        // Check if the email already exists in the database using the check.findUser function
-        const find = await product.findOne({ productName: productName });
-
-        if (find) {
-            res.status(201).send({ success: false, msg: "product already exists" });
-        } else {
-            // Create a add product  instance using the Mongoose model
-            const add_product = new product({
-                productName,
-                productImage,
-                productPrice,
-                quantity  
-            });
-            // console.log(">>>>>>>>>>>>>>>>>>...",add_product);
-            // Save the new user to the database
-            const addProduct = await add_product.save();
-            console.log(addProduct, "product add in database");
-            res.status(200).send({ success: true, result: addProduct });
-        }
-    } catch (error) {
-        console.log(error);
-        res.status(400).send({ status: 400, message: "product add faield" });
-    }
-};
-
-const addProductList = async (req, res) => {
-    try {
-        const { productName,category,subcategory, color,material,dimensions, productPrice, quantity,productReviews,shippingInformation ,availabilityStatus,discounts,warranty,productsRating,relatedProducts } = req.body; // Destructure the request body
-        
+        const { productName,category, productPrice, description} = req.body; // Destructure the request body        
        const  productImage = req.files.productImage;
         // Check if the email already exists in the database using the check.findUser function
         const find = await product.findOne({ productName: productName });
@@ -171,26 +168,14 @@ const addProductList = async (req, res) => {
             const add_product = new product({
                 productName,
                 category,
-                subcategory,
-                color,
-                material,
-                dimensions,
                 productImage,
                 productPrice,
-                quantity,
-                productReviews,
-                shippingInformation,
-                availabilityStatus,
-                discounts,
-                warranty,
-                productsRating,
-                relatedProducts
-                
+                description       
             });
             // console.log(">>>>>>>>>>>>>>>>>>...",add_product);
-            // Save the new user to the database
+            // Save the product to the database
             const addProduct = await add_product.save();
-            console.log(addProduct, "product add in database");
+            // console.log(addProduct, "product add in database");
             res.status(200).send({ success: true, result: addProduct });
         }
     } catch (error) {
