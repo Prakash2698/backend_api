@@ -183,6 +183,7 @@ const addProduct = async (req, res) => {
         res.status(400).send({ status: 400, message: "product add faield" });
     }
 };
+// ===========
 
 
 module.exports = {

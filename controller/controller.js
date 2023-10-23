@@ -1,18 +1,78 @@
 const newuserSchema = require("../model/model");
 const bcrypt = require("bcrypt"); // Import the bcrypt library
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
 
 const common = require("../config/common");
 const helper = require("../helper/helper");
 const OtpSchema = require("../model/otp");
-const productList = require("../model/admin/addProduct")
+const productList = require("../model/admin/addProduct");
 const kycSchema = require("../model/kyc");
 const user1Schema = require("../model/user1");
 const Product = require("../model/admin/addProduct");
+const Razorpay = require('razorpay');
+// ============================= razor_pay ===========================================
+const razorpay = new Razorpay({
+    key_id: 'YOUR_API_KEY',
+    key_secret: 'YOUR_API_SECRET',
+});
+// ============================razor_pay end============================================
+
+// ============================= start Signup start ====================================
+// const createuser = async (req, res) => {
+//     try {
+//         const { name, phone, email, password } = req.body; // Destructure the request body
+
+//          // Generate a unique partner ID (you can use a library like `uuid` for this)
+//            const partnerId = helper.generatePartnerId();
+           
+         
+
+
+//         if (!email) {
+//             res.status(400).send({ success: false, msg: "Email is required" });
+//             return;
+//         }
+//         if (!password) {
+//             res.status(400).send({ success: false, msg: "Password is required" });
+//             return;
+//         }
+//         // Check if the email already exists in the database using the check.findUser function
+//         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
+
+//         if (userData) {
+//             res.status(201).send({ success: false, msg: "Email or phone already exists" });
+//         } else {
+//             // Hash the password before saving it in the database
+//             const hashedPassword = bcrypt.hashSync(password, 10);
+//             // Create a new user instance using the Mongoose model
+//             const newUser = new newuserSchema({
+//                 name,
+//                 phone,
+//                 email,
+//                 partnerId,
+//                 password: hashedPassword // Set the hashed password
+//             });
+//               // Send the email and wait for it to complete
+//               const sendEmail = await transporter.sendMail({email:email});
+//               if(sendEmail){
+//                  res.status(400).send({ success: false, msg: "Email sent successfully" });
+//               }
+//             // console.log(">>>>>>>>>>>>>>>>>>...",newUser);
+//             // Save the new user to the database
+//             const user_data = await newUser.save();
+//             console.log(user_data, "user saved in the database");
+//             res.status(200).send({ success: true, data: user_data });
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         res.status(400).send({ status: 400, message: error.message });
+//     }
+// }
 
 const createuser = async (req, res) => {
     try {
-        const { name, phone, email, password } = req.body; // Destructure the request body
+        const { name, phone, email, password } = req.body;
 
         if (!email) {
             res.status(400).send({ success: false, msg: "Email is required" });
@@ -22,32 +82,63 @@ const createuser = async (req, res) => {
             res.status(400).send({ success: false, msg: "Password is required" });
             return;
         }
-        // Check if the email already exists in the database using the check.findUser function
+
+        // Generate a unique partner ID (you can use a library like `uuid` for this)
+        const partnerId = helper.generatePartnerId();
+
+        // Check if the email already exists in the database
         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
 
         if (userData) {
             res.status(201).send({ success: false, msg: "Email or phone already exists" });
         } else {
-            // Hash the password before saving it in the database
             const hashedPassword = bcrypt.hashSync(password, 10);
-            // Create a new user instance using the Mongoose model
             const newUser = new newuserSchema({
                 name,
                 phone,
                 email,
-                password: hashedPassword // Set the hashed password
+                partnerId, // Set the partnerId
+                password: hashedPassword
             });
-            // console.log(">>>>>>>>>>>>>>>>>>...",newUser);
+
             // Save the new user to the database
             const user_data = await newUser.save();
-            console.log(user_data, "user saved in the database");
-            res.status(200).send({ success: true, data: user_data });
+
+            // Send an email with the partnerId
+            const transporter = nodemailer.createTransport({
+                host: 'weberse.in',
+                port: 465,
+                secure: true,
+                auth: {
+                  user: 'info@weberse.live',
+                  pass:'Pp@7884294',
+                  authMethod: 'PLAIN', // Specify the authentication method ('LOGIN' or 'PLAIN' for most email providers)
+                },
+              });
+            const mailOptions = {
+                from:'info@weberse.live',
+                to: email,
+                subject: partnerId,
+                text: `Your Partner ID is: ${partnerId}`,
+            };
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error(error);
+                    res.status(400).send({ success: false, msg: "Email sending failed" });
+                } else {
+                    console.log("Email sent:", info.response);
+                    res.status(200).send({ success: true, data: user_data });
+                }
+            });
         }
     } catch (error) {
         console.log(error);
         res.status(400).send({ status: 400, message: error.message });
     }
 }
+
+
+// ============================= end Signup ===========================================
 
 // {
 //     "name":"vp",
@@ -56,7 +147,7 @@ const createuser = async (req, res) => {
 //     "password":"12344321"
 //   }
 
-
+// ============================= login user start ===========================================
 const login = async (req, res) => {
     try {
         const phone = req.body.phone;
@@ -82,6 +173,9 @@ const login = async (req, res) => {
         res.status(500).send("somethings went wrong");
     }
 }
+// ============================= login end ===========================================
+
+// ============================= verify_otp user start ===========================================
 const verifyotp = async (req, res) => {
     try {
         const phone = req.params.phone;
@@ -104,7 +198,7 @@ const verifyotp = async (req, res) => {
         res.send({ message: "not_found" });
     }
 }
-
+// ============================= verify_otp end ===========================================
 // const login = async (req, res) => {
 //     try {
 //       const  phone = req.body;
@@ -130,6 +224,7 @@ const verifyotp = async (req, res) => {
 //     }
 // }
 
+// ============================= otp_resend start ===========================================
 const resendOTP = async (req, res) => {
     try {
         const phone = req.params.phone;
@@ -270,6 +365,43 @@ const user1 = async(req,res)=>{
         console.log(error);
       }   
   };
+ 
+const orderHistory = async(req,res)=>{
+    const history = await user1Schema.find()
+    if (!history) {
+        res.send({status:401, message:"history_not_found"})
+    } else {
+       res.send({status:200, sucess:true,result:history}) 
+    }
+}
+
+// Create a route for initiating a payment
+const create_payment = async (req, res) => {
+    const { amount } = req.body;
+
+    const payment_capture = 1;
+    const currency = 'INR';
+
+    const options = {
+        amount: amount * 100, // Razorpay expects the amount in paise
+        currency,
+        receipt: 'receipt#1',
+        payment_capture,
+    };
+    try {
+        const order = await razorpay.orders.create(options);
+        const newPayment = new Payment({
+            amount,
+            status: 'pending',
+        });
+        await newPayment.save();
+        res.json(order);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Payment creation failed');
+    }
+};
+
 
 
 
@@ -280,5 +412,80 @@ module.exports = {
     resendOTP,
     getProduct,
     profile,
-    user1
+    user1,
+    orderHistory,
+    create_payment
 }
+
+
+
+// ============ for_partnerID======================================================
+
+// const helper = require("../../config/helper");
+// const Users = require("../models/user");
+// const { catchBlock } = require("../../config/helper");
+// const UserDao = require('../dao/userDao')
+
+// module.exports = {
+//   register: async (req, res) => {
+//     try {
+//       console.log("Received registration request:", req.body);
+//       let createUserObj = {};
+//       createUserObj.name = req.body.name;
+  
+//       if (!req.body.email) {
+//         console.log("Error: Invalid email");
+//         return catchBlock("Invalid email", res, 0, {}, req.headers["requestby"]);
+//       }
+//       createUserObj.email = req.body.email.trim().toLowerCase();
+  
+//       if (!req.body.mobileNo || isNaN(req.body.mobileNo)) {
+//         console.log("Error: Mobile Number not valid");
+//         return catchBlock("Mobile Number not valid", res, 0, {}, req.headers["requestby"]);
+//       }
+  
+//       let mobile = String(req.body.mobileNo);
+//       if (mobile.charAt(0) === "0") mobile = mobile.substring(1);
+  
+//       createUserObj.mobileNo = mobile;
+  
+//       if (req.body.password !== req.body.confirm_password) {
+//         console.log("Error: Password not Match");
+//         return catchBlock("Password not Match", res, 0, {}, req.headers["requestby"]);
+//       }
+      
+//       createUserObj.password = await helper.encryptPassword(req.body.password);
+      
+//       const existingUser = await Users.findOne({ memberId: req.body.sponserId });
+//       if (!existingUser) {
+//         console.log("Error: Sponser Id not found");
+//         return catchBlock("Sponser Id not found", res, 0, {}, req.headers["requestby"]);
+//       }
+      
+//       createUserObj.sponserId = req.body.sponserId;
+//       createUserObj.position = req.body.position;
+//       createUserObj.nominee_name = req.body.nominee_name;
+//       createUserObj.nominee_relation = req.body.nominee_relation;
+//       createUserObj.DOB = req.body.DOB;
+//       createUserObj.tpin=helper.generateTpin();
+  
+//       const existingUserMobileCount = await Users.countDocuments({ mobileNo:req.body.mobileNo });
+//       const existingUserEmailCount = await Users.countDocuments({ email:req.body.email });
+  
+//       if (existingUserMobileCount < 3 || existingUserEmailCount < 3) {
+            
+//       } else {
+//         console.log("Error: Maximum user limit reached for this mobile number");
+//         return catchBlock("Maximum user limit reached for this mobile number", res, 0, {}, req.headers['requestby']);
+//       }
+  
+//       await UserDao.createUser(createUserObj)
+//       console.log("User successfully Registered:", createUserObj);
+      
+//       return catchBlock("User successfully Registered", res, 1, {}, req.headers['requestby']);
+//     } catch (error) {
+//       console.error("Error during registration:", error);
+//       return catchBlock("Some error in Register", res, 0, {}, req.headers['requestby']);
+//     }
+ // },
+//   ========================================

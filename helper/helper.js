@@ -2,6 +2,7 @@ const userSchema = require("../model/model");
 require('dotenv').config();
 const axios=require('axios');
 const jwt = require("jsonwebtoken");
+let serialNumber = 0;
 
 module.exports = {    
     // =============== check for email and phone ===================
@@ -55,5 +56,9 @@ module.exports = {
     return jwt.sign(payload, process.env.SECRET_KEY, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
+  },
+  generatePartnerId:()=>{
+    serialNumber++;
+    return `DEP000${serialNumber}`;
   },
 }
