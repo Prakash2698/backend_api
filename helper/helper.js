@@ -59,6 +59,8 @@ module.exports = {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
   },
+
+  
   // generatePartnerId:()=>{
   //   serialNumber++;
   //   return `DEP000${serialNumber}`;
