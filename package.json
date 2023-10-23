@@ -20,7 +20,8 @@
     "nodemailer": "^6.9.6",
     "nodemon": "^3.0.1",
     "razorpay": "^2.9.2",
-    "save": "^2.9.0"
+    "save": "^2.9.0",
+    "uuid": "^9.0.1"
   },
   "description": ""
 }

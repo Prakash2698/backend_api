@@ -3,6 +3,8 @@ require('dotenv').config();
 const axios=require('axios');
 const jwt = require("jsonwebtoken");
 let serialNumber = 0;
+// let serialNumber = 0;
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = {    
     // =============== check for email and phone ===================
@@ -57,8 +59,18 @@ module.exports = {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
   },
-  generatePartnerId:()=>{
-    serialNumber++;
-    return `DEP000${serialNumber}`;
-  },
+  // generatePartnerId:()=>{
+  //   serialNumber++;
+  //   return `DEP000${serialNumber}`;
+  // },
+//   generatePartnerId: () => {
+//     // Generate a UUID as the partner ID
+//     return `DEP${uuidv4()}`;
+// }
+generatePartnerId: () => {
+  serialNumber++;
+  const paddedSerialNumber = serialNumber.toString().padStart(6, '0'); // Ensure the serial number is 6 digits long with leading zeros
+  return `DEP${paddedSerialNumber}`;
+}
+
 }
