@@ -151,6 +151,7 @@ const createuser = async (req, res) => {
 const login = async (req, res) => {
     try {
         const phone = req.body.phone;
+        
         const user = await newuserSchema.findOne({ phone: phone });
         if (!user) {
             return res.status(401).json({ message: 'please check your number' });
@@ -173,7 +174,40 @@ const login = async (req, res) => {
         res.status(500).send("somethings went wrong");
     }
 }
-// ============================= login end ===========================================
+// ============================= login end ======================================================
+// =========================== I am doing this user_login ========================================
+const user_login = async (req, res) => {
+    try {
+        const { partnerId, password } = req.body;
+
+        if (!partnerId || !password) {
+            return res.status(400).json({ success: false, message: "Both partnerId and password are required" });
+        }
+
+        // Find the user in the database by partnerId
+        const user = await newuserSchema.findOne({partnerId });
+        //   console.log(">>>>>>>>.",user);
+        if (!user) {
+            return res.status(401).json({ success: false, message: "User not found" });
+        }
+        console.log(user.password)
+        // Compare the provided password with the hashed password in the database
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        // console.log("password>>>>>>>>>>>>>>>>>",password);
+        console.log(passwordMatch)
+        if (!passwordMatch) {
+            return res.status(401).json({ success: false, message: "Incorrect password" });
+        }
+        // You can generate a token here for authentication if needed
+        res.status(200).json({ success: true, message: "Login successful" , result:user });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: "Something went wrong" });
+    }
+}
+
+
 
 // ============================= verify_otp user start ===========================================
 const verifyotp = async (req, res) => {
@@ -409,12 +443,13 @@ module.exports = {
     createuser,
     verifyotp,
     login,
+    user_login,
     resendOTP,
     getProduct,
     profile,
     user1,
     orderHistory,
-    create_payment
+    create_payment,
 }
 
 
