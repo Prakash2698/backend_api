@@ -185,7 +185,9 @@ exports.getReset=(req,res,next)=>{
     errorMessage: message
   });
 }
+
 exports.postReset=(req,res,next)=>{
+
   crypto.randomBytes(32,(err,buffer)=>{
     if(err)
       {

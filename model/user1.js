@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-// console.log("schema>>>>>>>>>>");
 bcrypt = require('bcrypt');
 const user1Schema = new mongoose.Schema({
   // Reference to the user who placed the order

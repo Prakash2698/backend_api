@@ -2,6 +2,8 @@ const newuserSchema = require("../model/model");
 const bcrypt = require("bcrypt"); // Import the bcrypt library
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+
 
 const common = require("../config/common");
 const helper = require("../helper/helper");
@@ -9,71 +11,16 @@ const OtpSchema = require("../model/otp");
 const productList = require("../model/admin/addProduct");
 const kycSchema = require("../model/kyc");
 const user1Schema = require("../model/user1");
+const orders = require('../model/user1');
 const Product = require("../model/admin/addProduct");
 const Razorpay = require('razorpay');
-// ============================= razor_pay ===========================================
-const razorpay = new Razorpay({
-    key_id: 'YOUR_API_KEY',
-    key_secret: 'YOUR_API_SECRET',
-});
-// ============================razor_pay end============================================
+const Token = require('../model/model');
+const paymentModel = require('../model/RazorpayOnline');
 
 // ============================= start Signup start ====================================
-// const createuser = async (req, res) => {
-//     try {
-//         const { name, phone, email, password } = req.body; // Destructure the request body
-
-//          // Generate a unique partner ID (you can use a library like `uuid` for this)
-//            const partnerId = helper.generatePartnerId();
-           
-         
-
-
-//         if (!email) {
-//             res.status(400).send({ success: false, msg: "Email is required" });
-//             return;
-//         }
-//         if (!password) {
-//             res.status(400).send({ success: false, msg: "Password is required" });
-//             return;
-//         }
-//         // Check if the email already exists in the database using the check.findUser function
-//         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
-
-//         if (userData) {
-//             res.status(201).send({ success: false, msg: "Email or phone already exists" });
-//         } else {
-//             // Hash the password before saving it in the database
-//             const hashedPassword = bcrypt.hashSync(password, 10);
-//             // Create a new user instance using the Mongoose model
-//             const newUser = new newuserSchema({
-//                 name,
-//                 phone,
-//                 email,
-//                 partnerId,
-//                 password: hashedPassword // Set the hashed password
-//             });
-//               // Send the email and wait for it to complete
-//               const sendEmail = await transporter.sendMail({email:email});
-//               if(sendEmail){
-//                  res.status(400).send({ success: false, msg: "Email sent successfully" });
-//               }
-//             // console.log(">>>>>>>>>>>>>>>>>>...",newUser);
-//             // Save the new user to the database
-//             const user_data = await newUser.save();
-//             console.log(user_data, "user saved in the database");
-//             res.status(200).send({ success: true, data: user_data });
-//         }
-//     } catch (error) {
-//         console.log(error);
-//         res.status(400).send({ status: 400, message: error.message });
-//     }
-// }
-
 const createuser = async (req, res) => {
     try {
         const { name, phone, email, password } = req.body;
-
         if (!email) {
             res.status(400).send({ success: false, msg: "Email is required" });
             return;
@@ -136,8 +83,6 @@ const createuser = async (req, res) => {
         res.status(400).send({ status: 400, message: error.message });
     }
 }
-
-
 // ============================= end Signup ===========================================
 
 // {
@@ -175,7 +120,7 @@ const login = async (req, res) => {
     }
 }
 // ============================= login end ======================================================
-// =========================== I am doing this user_login ========================================
+// =========================== api user_login ========================================
 const user_login = async (req, res) => {
     try {
         const { partnerId, password } = req.body;
@@ -206,8 +151,7 @@ const user_login = async (req, res) => {
         res.status(500).json({ success: false, message: "Something went wrong" });
     }
 }
-
-
+// =========================== api user_login end =====================================
 
 // ============================= verify_otp user start ===========================================
 const verifyotp = async (req, res) => {
@@ -283,6 +227,88 @@ const resendOTP = async (req, res) => {
         res.send({ status: 400, message: "Some error in accessing user data" });
     }
 }
+// ================   reset-password-request Done ========================================
+
+// Request to initiate password reset - Step 1
+const reset_password_request = async (req, res) => {
+    try {
+        const { partnerId, email } = req.body;
+        if (!partnerId || !email) {
+            return res.status(400).json({ success: false, message: "Both partnerId and email are required" });
+        }
+        // Check if the email exists in your database
+        const user = await newuserSchema.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate a reset token and set an expiry time
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        const tokenExpiry = Date.now() + 3600000; // 1 hour in milliseconds
+
+        // Save the reset token and expiry time in the user's document
+        user.token = resetToken;
+        user.tokenExpiry = tokenExpiry;
+
+        // Save the updated user document
+        await user.save();
+
+        // Send a password reset email
+        const transporter = nodemailer.createTransport({
+            // Configure your email provider
+            host: 'weberse.in',
+            port: 465,
+            secure: true,
+            auth: {
+                user: 'info@weberse.live',
+                pass: 'Pp@7884294',
+                authMethod: 'PLAIN', // Specify the authentication method ('LOGIN' or 'PLAIN' for most email providers)
+            },
+        });
+        const mailOptions = {
+            from: 'info@weberse.live',
+            to: email,
+            subject: 'Password Reset',
+            text: `Click this link to reset your password: http://localhost:8000/reset_password_request/${resetToken}`,
+        };
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).send({ message: 'Password reset email sent' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'An error occurred while processing your request' });
+    }
+}
+
+// Reset Password SET
+const reset_password_set = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+        console.log(">>>>>>>>>",token);
+        // Check if the token is valid and hasn't expired
+        const user = await newuserSchema.findOne({
+            token:token,
+            // tokenExpiry: { $gt: Date.now() },
+        });
+        console.log(">>>>>>>>>>>",user);
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+        // Allow password reset
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        // Update the user's password in the database
+        await newuserSchema.findByIdAndUpdate(user._id, {
+            password: hashedPassword,
+            token: null, // Clear the token
+            tokenExpiry: null, // Clear the token expiry
+        });
+        res.status(200).json({ message: 'Password reset successful' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while processing your request' });
+    }
+};
 
 const getProduct = async (req, res) => {
     try {
@@ -297,58 +323,9 @@ const getProduct = async (req, res) => {
     }
 
 }
-// const profile = async (req, res) => {
-//     try {
-//         const userId = req.params._id;
-//         // console.log(userId,">>>>>>>>>>>>>>>>>>>>.");
-//         // Use the `populate` method to fetch books with author details
-//         const userProfile = await newuserSchema.find({ _id: userId }).populate('kyc');
-//         console.log(userProfile,">>>>>>>>>>>>>>>....");
-//         if(!userProfile){
-//             res.send({sucess:false,message:"profile_not_found"})
-//         }
-//         res.send({status:200 ,sucess:true ,result : userProfile});
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'An error occurred' });
-//     }
-// }
-
-// =============================================================================
 
 
-// const profile = async (req, res) => {
-//     try {
-//       const userId = req.params.userId; // Assuming you pass the user's _id as a parameter
-
-//       const userProfile = await newuserSchema.aggregate([
-//         {
-//           $match: {
-//             _id:new mongoose.Types.ObjectId(userId),
-//           },
-//         },
-//         {
-//           $lookup: {
-//             from: "kyc", // Name of the KYC collection
-//             localField: "_id", // Field in the User collection
-//             foreignField: "userId", // Field in the KYC collection
-//             as: "kycData",
-//           },
-//         },
-//       ]);
-//   console.log(">>>>>>>>>>>>>",userProfile);
-//       if (userProfile.length > 0) {
-//         // userProfile[0] contains the user's profile data
-//         res.status(200).json({ success: true, data: userProfile[0] });
-//       } else {
-//         res.status(404).json({ success: false, message: "User profile not found" });
-//       }
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).json({ success: false, message: "An error occurred" });
-//     }
-//   };
-
+// ============================ user profile ============================
 const profile = async (req, res) => {
     try {
         const userId = req.params.userId
@@ -371,7 +348,7 @@ const profile = async (req, res) => {
         console.log(error);
     }
 }
-// =================================================
+// ================ place order api =====================================
 const user1 = async(req,res)=>{
       try {
         const { userId, productId, quantity } = req.body;
@@ -400,6 +377,7 @@ const user1 = async(req,res)=>{
       }   
   };
  
+//   ============== order history ===========================================
 const orderHistory = async(req,res)=>{
     const history = await user1Schema.find()
     if (!history) {
@@ -408,34 +386,81 @@ const orderHistory = async(req,res)=>{
        res.send({status:200, sucess:true,result:history}) 
     }
 }
+// ================ PAYMENT gateway Razorpay START ===========================
 
+// ============================= razor_pay ===========================================
+const razorpay = new Razorpay({
+    key_id: 'YOUR_API_KEY',
+    key_secret: 'YOUR_API_SECRET',
+});
+// ============================razor_pay end===========================================
 // Create a route for initiating a payment
-const create_payment = async (req, res) => {
-    const { amount } = req.body;
-
-    const payment_capture = 1;
-    const currency = 'INR';
-
-    const options = {
-        amount: amount * 100, // Razorpay expects the amount in paise
-        currency,
-        receipt: 'receipt#1',
-        payment_capture,
-    };
+const razorpay_create_payment = async (req, res) => {
     try {
-        const order = await razorpay.orders.create(options);
-        const newPayment = new Payment({
-            amount,
-            status: 'pending',
+        const { amount } = req.body;    
+        const options = {
+          amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+          currency: 'INR',
+        //   receipt: orderId,
+          payment_capture: 1, // Auto-capture payment
+        //   description
+        }; 
+        console.log(options,">>>>>>>>>>ooooooooo");   
+        razorpay.orders.create(options, (err, order) => {
+          if (err) {
+            return res.status(500).send({ error: 'Error creating Razorpay order' });
+          }    
+          // Save the order ID to your database (optional)
+      // Create a Payment document in MongoDB
+      const payment = new paymentModel({
+        orderId: order._id,  
+        amount: amount,
+        status: 'created',
+      });
+    const paymenOrder = payment.save();
+          res.send({status:200, message:"payment sucess",result:paymenOrder});
         });
-        await newPayment.save();
-        res.json(order);
-    } catch (error) {
+      } catch (error) {
         console.error(error);
-        res.status(500).send('Payment creation failed');
-    }
+        res.status(500).send({ error: 'An error occurred' });
+      }
+    
 };
 
+const payment_callback = async(req,res)=>{
+    // try {
+    //     const { paymentId, orderId } = req.body;    
+    //     // Verify the payment
+    //     razorpay.payments.fetch(paymentId, async (err, payment) => {
+    //       if (err || payment.order_id !== orderId) {
+    //         return res.status(400).json({ error: 'Payment verification failed' });
+    //       }    
+    //       // Update the payment status in your database
+    //       const updatedPayment = await paymentModel.findOne({ orderId });
+    //       updatedPayment.status = payment.status;
+    //       await updatedPayment.save();
+    
+    //       res.json({ status: 'Payment success' });
+    //     });
+    //   } catch (error) {
+    //     console.error(error);
+    //     res.status(500).json({ error: 'An error occurred' });
+    //   }
+
+      try {
+        // Verify the payment here
+        // You should update your database and handle the payment status
+        const { paymentId, orderId } = req.body;
+    
+        // Verify the payment and update your database
+    
+        res.json({ status: 'Payment success' });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred' });
+      }
+}
+// ================ PAYMENT gateway Razorpay END ==============================
 
 
 
@@ -449,7 +474,10 @@ module.exports = {
     profile,
     user1,
     orderHistory,
-    create_payment,
+    reset_password_request,
+    reset_password_set,
+    razorpay_create_payment,
+    payment_callback
 }
 
 

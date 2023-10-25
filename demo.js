@@ -1,4 +1,39 @@
+const nodemailer = require('nodemailer');
 
+let transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
+
+module.exports = {
+  
+  sendMail: async (req, res) => {
+    try {
+      const {  to, subject, text } = req.body;
+
+      const mailOptions = {
+        from:"rajeshpushpakar01@gmail.com",
+        to: to,
+        subject: subject,
+        text: text,
+      };
+
+      // Send the email and wait for it to complete
+      await transporter.sendMail(mailOptions);
+
+      console.log('Email sent successfully');
+      res.status(200).json({ message: 'Email sent successfully' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  },
+};
 
 
 // =======================================================================================

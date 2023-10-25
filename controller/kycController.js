@@ -3,9 +3,9 @@ const kycSchema = require("../model/kyc");
 const userkyc = async (req, res) => {
     try {
         const { aadharNo, panNo } = req.body; // Destructure the request body
-        console.log(aadharNo, panNo);
+        // console.log(aadharNo, panNo);
         const aadharFrontImage = req.files.aadharFrontImage;
-        console.log(">>>>>aadharFrontImage",aadharFrontImage);
+        // console.log(">>>>>aadharFrontImage",aadharFrontImage);
         const aadharBackImage = req.files.aadharBackImage;   
         const panImage = req.files.panImage;
         const user = req.user._id;
