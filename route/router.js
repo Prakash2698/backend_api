@@ -1,6 +1,7 @@
 var express = require("express"),
  router = express.Router()
-const {createuser, verifyotp, login,user_login, resendOTP,getProduct,profile,user1,orderHistory,reset_password_request, reset_password_set,razorpay_create_payment} = require("../controller/controller")
+const {createuser, verifyotp, login,user_login, resendOTP,getProduct,profile,user1,orderHistory,reset_password_request, reset_password_set,razorpay_create_payment,payment_callback} = require("../controller/controller");
+const authToken = require("../middleware/auth");
 
 // console.log(">>>>Route");
 router.post("/signup", createuser);
@@ -14,7 +15,8 @@ router.post("/user1place",user1);
 router.get("/orderHistory",orderHistory);
 router.post("/reset_password_request",reset_password_request);
 router.get("/reset_password_set/:token", reset_password_set);
-router.post("/razorpay_create_payment",razorpay_create_payment);
+router.post("/razorpay_create_payment",authToken,razorpay_create_payment);
+router.post("/payment_confirmed",payment_callback);
 
 module.exports = router ;
 

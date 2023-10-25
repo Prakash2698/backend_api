@@ -1,26 +1,29 @@
 const mongoose = require("mongoose");
-// Define a Mongoose model for storing payment details
-const Payment = mongoose.Schema({
-    // orderId: {
-    //     type: String,
-    // },
-    orderId: { 
-        type: mongoose.Schema.Types.ObjectId, ref: "order" 
+
+const PaymentSchema = new mongoose.Schema({
+    orderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "order", // Reference the "order" model
+    },
+    userId: { // Add a field for the user ID
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user", // Reference the "user" model
     },
     paymentId: {
         type: String,
     },
-    amout: {
+    amount: {
         type: Number,
-        require: true
+        required: true, // Correct the 'require' to 'required'
     },
-    description:{
+    description: {
         type: String,
     },
     status: {
         type: String,
-        enum: ['failed','sucess'],
+        enum: ['failed', 'confirmed'], // Correct 'sucess' to 'success'
+        default: 'failed',
     }
 });
 
-module.exports = mongoose.model("razorpay", Payment);
+module.exports = mongoose.model("razorpay", PaymentSchema);
