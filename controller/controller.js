@@ -425,142 +425,101 @@ const razorpay = new Razorpay({
     key_secret: 'tB1CHTW3BvEb9TR06ILUCBWV',
 });
 // ============================razor_pay end===========================================
-const razorpay_create_payment = async(req,res)=>{
-    try {
-        const { amount, userId, description } = req.body;    
-        // Create a Razorpay order
-        const options = {
-          amount: amount * 100, // Amount in paise (1 INR = 100 paise)
-          currency: "INR",
-          payment_capture: 1, // Auto-capture payment
-        };
-    
-        const order = await razorpay.orders.create(options);
-        // Generate a new ObjectId
-const validObjectId = new mongoose.Types.ObjectId();    
-        // Create a Payment document in MongoDB
-        const payment = new paymentModel({
-          orderId: validObjectId,
-          userId: userId,
-          paymentId: order.id,
-          amount: amount,
-          description: description,
-        });
-    
-        // Save the Payment document and await the Promise
-        const savedPayment = await payment.save();
-    
-        res.status(200).json({
-          message: "Payment success",
-          payment: savedPayment,
-          razorpayOrder: order,
-        });
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "An error occurred" });
-      }
-}
-// =============================================
-
-
-// const payment_callback = async(req,res)=>{  
+// const razorpay_create_payment = async(req,res)=>{
 //     try {
-//         const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+//         const { amount, userId,partnerId, description } = req.body;    
+//         // Create a Razorpay order
+//         const options = {
+//           amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+//           currency: "INR",
+//           payment_capture: 1, // Auto-capture payment
+//         };
     
-//         // Verify the callback using your Razorpay secret key
-//         const isValid = razorpayForWebhooks.verifyPaymentSignature(
-//           JSON.stringify(req.body),
-//           razorpay_signature
-//         );
+//         const order = await razorpay.orders.create(options);
+//         // Generate a new ObjectId
+//         const validObjectId = new mongoose.Types.ObjectId(); 
+//         const validPartnerId = new mongoose.Types.ObjectId({partnerId});   
+//         // Create a Payment document in MongoDB
+//         const payment = new paymentModel({
+//           orderId: validObjectId,
+//           userId: userId,
+//           partnerId:validPartnerId,
+//           paymentId: order.id,
+//           amount: amount,
+//           description: description,
+//         });
     
-//         if (isValid) {
-//           // Payment callback is valid, update the payment status in your database
-//           const payment = await paymentModel.findOne({ paymentId: razorpay_order_id });
+//         // Save the Payment document and await the Promise
+//         const savedPayment = await payment.save();
     
-//           if (!payment) {
-//             return res.status(404).json({ error: "Payment not found" });
-//           }
-    
-//           // Update the payment status to "confirmed"
-//           payment.status = "confirmed";
-//           await payment.save();
-    
-//           res.status(200).json({ message: "payment_confirmed" });
-//         } else {
-//           // Invalid payment callback
-//           res.status(400).json({ error: "Invalid payment callback" });
-//         }
+//         res.status(200).json({
+//           message: "Payment success",
+//           payment: savedPayment,
+//           razorpayOrder: order,
+//         });
 //       } catch (error) {
 //         console.error(error);
 //         res.status(500).json({ error: "An error occurred" });
 //       }
 // }
-// const payment_callback = async (req, res) => {
-//     try {
-//       const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+const razorpay_create_payment = async (req, res) => {
+    try {
+      const { amount, userId, partnerId, description } = req.body;
+      // Create a Razorpay order
+      const options = {
+        amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+        currency: "INR",
+        payment_capture: 1, // Auto-capture payment
+      };
   
-//       // Verify the callback using your Razorpay secret key
-//       const secret = 'tB1CHTW3BvEb9TR06ILUCBWV'; // Replace with your actual secret key
+      const order = await razorpay.orders.create(options);
+      // Create a Payment document in MongoDB
+      const payment = new paymentModel({
+        orderId:new mongoose.Types.ObjectId(), // Generate a new ObjectId
+        userId: userId,
+        partnerId: partnerId, // Use the partnerId string directly
+        paymentId: order.id,
+        amount: amount,
+        description: description,
+      });
   
-//       const crypto = require('crypto');
-//       const hmac = crypto.createHmac('sha256', secret);
-//       hmac.update(JSON.stringify(req.body));
-//       const generatedSignature = hmac.digest('hex');
+      // Save the Payment document and await the Promise
+      const savedPayment = await payment.save();
   
-//       if (generatedSignature === razorpay_signature) {
-//         // Payment callback is valid, update the payment status in your database
-//         const payment = await paymentModel.findOne({ paymentId: razorpay_order_id });
+      res.status(200).json({
+        message: "Payment success",
+        payment: savedPayment,
+        razorpayOrder: order,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "An error occurred" });
+    }
+  };
   
-//         if (!payment) {
-//           return res.status(404).json({ error: 'Payment not found' });
-//         }  
-//         // Update the payment status to "confirmed"
-//         payment.status = 'confirmed';
-//         await payment.save();
-  
-//         res.status(200).json({ message: 'payment_confirmed' });
-//       } else {
-//         // Invalid payment callback
-//         res.status(400).json({ error: 'Invalid payment callback' });
-//       }
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).json({ error: 'An error occurred' });
-//     }
-//   };
+// =============================================
 const payment_callback = async (req, res) => {
     try {
-      const { razorpay_order_id, razorpay_signature } = req.body;  
-      // Verify the callback using your Razorpay secret key
-      const secret = 'tB1CHTW3BvEb9TR06ILUCBWV'; // Replace with your actual secret key
+      const { paymentId } = req.body;
   
-      const crypto = require('crypto');
-      const hmac = crypto.createHmac('sha256', secret);
-      hmac.update(JSON.stringify(req.body));
-      const generatedSignature = hmac.digest('hex');
+      // Find the payment using razorpay_order_id
+      const payment = await paymentModel.findOne({ paymentId });
+    //   console.log(">>>>>>>>>",payment);
   
-      if (generatedSignature === razorpay_signature) {
-        // Payment callback is valid, update the payment status in your database
-        const payment = await paymentModel.findOne({ orderId: razorpay_order_id });
+      if (!payment) {
+        return res.status(404).json({ error: 'Payment not found' });
+      }  
+      // Update the payment status to "confirmed"
+      payment.status = 'confirmed';
+      await payment.save();
   
-        if (!payment) {
-          return res.status(404).json({ error: 'Payment not found' });
-        }
-  
-        // Update the payment status to "confirmed"
-        payment.status = 'confirmed';
-        await payment.save();
-  
-        res.status(200).json({ message: 'payment_confirmed' });
-      } else {
-        // Invalid payment callback
-        res.status(400).json({ error: 'Invalid payment callback' });
-      }
+      res.status(200).json({ message: 'payment_confirmed' });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'An error occurred' });
     }
   };
+  
   
   
 // ================ PAYMENT gateway Razorpay END ==============================

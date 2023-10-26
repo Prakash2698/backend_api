@@ -9,6 +9,10 @@ const PaymentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "user", // Reference the "user" model
     },
+    partnerId: {
+        type: String, // Define partnerId as a string
+        required: true
+      },
     paymentId: {
         type: String,
     },
