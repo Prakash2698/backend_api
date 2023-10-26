@@ -3,6 +3,7 @@ const userSchema = require("../model/adminAddUser");
 const verifyKyc = require("../model/kyc");
 const product = require('../model/admin/addProduct');
 var mongoose = require('mongoose');
+const modelEstamp = require("../model/admin/modelEStamp");
 
 
 const userget = async (req, res) => {
@@ -65,18 +66,18 @@ const adminEditUser = async (req, res) => {
         const update = await userSchema.findByIdAndUpdate(
             id, // Use id as a string
             {
-            name,
-            phone,
-            email,
-            password
+                name,
+                phone,
+                email,
+                password
             },
             { new: true }
-          );
+        );
         // console.log(">>>>>>update", update);
         if (!update) {
-            res.status(404).send({message:"user_not_found"});
-        }else{
-            res.send({sucess:true ,result:update});
+            res.status(404).send({ message: "user_not_found" });
+        } else {
+            res.send({ sucess: true, result: update });
         }
     } catch (error) {
         console.log(error);
@@ -84,21 +85,19 @@ const adminEditUser = async (req, res) => {
     }
 }
 
-
-
 const verifyKycByAdmin = async (req, res) => {
     try {
         const userId = req.params.userId;
         const { status, userStatus } = req.body;
         console.log(userId, "userId>>>>>>>>>>>>");
-        
+
         // First update: Update the "status" field in verifyKyc
         const firstUpdate = await verifyKyc.findOneAndUpdate(
-            {userId:userId}, // Pass the _id directly
+            { userId: userId }, // Pass the _id directly
             { status },
             { new: true }
         );
-        
+
         console.log("firstUpdate:", firstUpdate);
         // Second update: Update the "userStatus" field in newuserSchema
         const secondUpdate = await newuserSchema.findByIdAndUpdate(
@@ -127,7 +126,7 @@ const verifyKycByAdmin = async (req, res) => {
 // const addProduct = async (req, res) => {
 //     try {
 //         const { productName, productPrice, quantity } = req.body; // Destructure the request body
-        
+
 //        const  productImage = req.files.productImage;
 //         // Check if the email already exists in the database using the check.findUser function
 //         const find = await product.findOne({ productName: productName });
@@ -156,8 +155,8 @@ const verifyKycByAdmin = async (req, res) => {
 
 const addProduct = async (req, res) => {
     try {
-        const { productName,category, productPrice, description} = req.body; // Destructure the request body        
-       const  productImage = req.files.productImage;
+        const { productName, category, productPrice, description } = req.body; // Destructure the request body        
+        const productImage = req.files.productImage;
         // Check if the email already exists in the database using the check.findUser function
         const find = await product.findOne({ productName: productName });
 
@@ -170,7 +169,7 @@ const addProduct = async (req, res) => {
                 category,
                 productImage,
                 productPrice,
-                description       
+                description
             });
             // console.log(">>>>>>>>>>>>>>>>>>...",add_product);
             // Save the product to the database
@@ -183,7 +182,22 @@ const addProduct = async (req, res) => {
         res.status(400).send({ status: 400, message: "product add faield" });
     }
 };
-// ===========
+// =============== eStamp api ======================================
+const e_Stamp = async (req, res) => {
+    try {
+        const { price, perHitCharge, validity } = req.body;
+        const newEstamp = new modelEstamp({
+            price,
+            perHitCharge,
+            validity
+        });
+        await newEstamp.save();
+        res.status(201).json({ success: true, newEstamp });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred' });
+    }
+}
 
 
 module.exports = {
@@ -191,5 +205,6 @@ module.exports = {
     adminAddUser,
     adminEditUser,
     verifyKycByAdmin,
-    addProduct
+    addProduct,
+    e_Stamp
 }

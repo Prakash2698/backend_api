@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  wallet_amount: {
+    type: Number, // Define wallet_amount as a numerical field
+    default: 0 // You can set a default value if needed
+  },
   token: { 
     type: String 
   },

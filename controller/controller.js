@@ -16,6 +16,8 @@ const Product = require("../model/admin/addProduct");
 const Razorpay = require('razorpay');
 const Token = require('../model/model');
 const paymentModel = require('../model/RazorpayOnline');
+const wallet_amount = require("../model/addMoney");
+const Notification = require("../model/notificationBar");
 
 // ============================= start Signup start ====================================
 const createuser = async (req, res) => {
@@ -83,6 +85,7 @@ const createuser = async (req, res) => {
         res.status(400).send({ status: 400, message: error.message });
     }
 }
+
 // ============================= end Signup ===========================================
 
 // {
@@ -519,11 +522,149 @@ const payment_callback = async (req, res) => {
       res.status(500).json({ error: 'An error occurred' });
     }
   };
-  
-  
-  
+    
 // ================ PAYMENT gateway Razorpay END ==============================
 
+
+// ==================== Start Add_Money api ===================================
+// const add_Money = async(req,res)=>{
+//     try {
+//         const { userId, amount } = req.body;    
+//         // Validate the userId and amount
+//         if (!userId || !amount) {
+//           return res.status(400).json({ success: false, msg: 'Invalid userId or amount' });
+//         }    
+//         // Find the user by their userId
+//         const user = await newuserSchema.findOne({ _id: userId });    
+//         if (!user) {
+//           return res.status(404).json({ success: false, msg: 'User not found' });
+//         }    
+//         // Perform the "addMoney" operation by updating the user's wallet
+//         const parsedAmount = parseFloat(amount);
+//         if (isNaN(parsedAmount)) {
+//           return res.status(400).json({ success: false, msg: 'Invalid amount format' });
+//         }    
+//         // Update the wallet document associated with the user
+//         const wallet = await wallet_amount.findOne({ userId: userId });    
+//         if (!wallet) {
+//           // If the wallet document doesn't exist, create one
+//           const newWallet = new wallet_amount({
+//             userId: userId,
+//             addAmount: parsedAmount,
+//           });
+//           await newWallet.save();
+//         } else {
+//           // If the wallet document exists, update the addAmount
+//           wallet.wallet_amount += parsedAmount;
+//           await wallet.save();
+//         }    
+//         return res.status(200).json({ success: true, msg: 'Money added successfully', user_walletAmount: wallet.wallet_amount });
+//       } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ success: false, msg: 'An error occurred' });
+//       }
+// }
+
+const add_Money = async (req, res) => {
+    try {
+      const { userId, amount } = req.body;
+  
+      // Validate the userId and amount
+      if (!userId || !amount) {
+        return res.status(400).json({ success: false, msg: 'Invalid userId or amount' });
+      }
+  
+      // Find the user by their userId
+      const user = await newuserSchema.findOne({ _id: userId });
+  
+      if (!user) {
+        return res.status(404).json({ success: false, msg: 'User not found' });
+      }
+  
+      // Perform the "addMoney" operation by updating the user's wallet
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount)) {
+        return res.status(400).json({ success: false, msg: 'Invalid amount format' });
+      }  
+      const newWallet = new wallet_amount({
+             userId: userId,
+             addAmount: parsedAmount,
+             });
+             await newWallet.save();
+      // Update the user's wallet amount
+      user.wallet_amount += parsedAmount;
+      await user.save();
+  
+      return res.status(200).json({ success: true, msg: 'Money added successfully', user_walletAmount: user.wallet_amount });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, msg: 'An error occurred' });
+    }
+  };
+// ================== Notification BAR api ====================================
+  const notification = async(req,res)=>{
+    try {
+        const { userId, message } = req.body;
+
+        const notification = new Notification({
+             userId,
+             message 
+            });
+        await notification.save();
+        res.status(201).json({ success: true, notification });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred' });
+      }
+  }
+  const getNotification = async(req,res)=>{
+    try {
+        const userId = req.params.userId;
+        const notifications = await Notification.findOne({ userId })  
+        // console.log(notifications); 
+              if(notifications){
+                  res.status(200).json({ success: true, notifications });
+              }
+              else{
+                res.status(400).json({ success: false, message:"user_not_found" });
+              }
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred' });
+      }
+  }
+// ================== if user login he change this password doing ==========================
+const { check, validationResult } = require('express-validator');
+const loginUserchangePassword = async(req,res)=>{
+    try {
+        const userId = req.params.userId;
+        const { currentPassword, newPassword } = req.body;    
+        // Validate the input and ensure the user is authenticated
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ success: false, errors: errors.array() });
+        }    
+        // Find the user by their userId
+        const user = await newuserSchema.findOne({ _id: userId });    
+        if (!user) {
+          return res.status(404).json({ success: false, msg: 'User not found' });
+        }    
+        // Check the current password
+        const isPasswordMatch = await bcrypt.compare(currentPassword, user.password);  
+        if (!isPasswordMatch) {
+          return res.status(401).json({ success: false, msg: 'Current password is incorrect' });
+        }    
+        // Hash and update the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+       const result = await user.save();
+    
+        res.status(200).json({ success: true, msg: 'Password changed successfully' ,result:result });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, msg: 'An error occurred' });
+      }
+}
 
 
 module.exports = {
@@ -539,7 +680,11 @@ module.exports = {
     reset_password_request,
     reset_password_set,
     razorpay_create_payment,
-    payment_callback
+    payment_callback,
+    add_Money,
+    notification,
+    getNotification,
+    loginUserchangePassword
 }
 
 
