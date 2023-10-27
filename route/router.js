@@ -6,7 +6,7 @@ const authToken = require("../middleware/auth");
 // console.log(">>>>Route");
 router.post("/signup", createuser);
 router.post("/login", login);
-router.get('/user_login',user_login)
+router.post('/user_login',user_login)
 router.post("/verifyotp/:phone", verifyotp);
 router.post("/resendOTP/:phone", resendOTP);
 router.get("/getProduct",getProduct);

@@ -31,13 +31,10 @@ const createuser = async (req, res) => {
             res.status(400).send({ success: false, msg: "Password is required" });
             return;
         }
-
         // Generate a unique partner ID (you can use a library like `uuid` for this)
         const partnerId = helper.generatePartnerId();
-
         // Check if the email already exists in the database
         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
-
         if (userData) {
             res.status(201).send({ success: false, msg: "Email or phone already exists" });
         } else {
@@ -49,10 +46,9 @@ const createuser = async (req, res) => {
                 partnerId, // Set the partnerId
                 password: hashedPassword
             });
-
             // Save the new user to the database
             const user_data = await newUser.save();
-
+            
             // Send an email with the partnerId
             const transporter = nodemailer.createTransport({
                 host: 'weberse.in',

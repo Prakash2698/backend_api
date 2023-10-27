@@ -21,6 +21,14 @@ const adminAdduser =new mongoose.Schema({
       password: {
         type: String,
         required: true,
+      },
+      partnerId:{
+        type: String,
+        required: true
+      },
+      token: { 
+        type: String,
+        require:true
       }, 
 })
 
