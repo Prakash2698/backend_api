@@ -22,7 +22,7 @@ const model_eStamp = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    // You can add more fields as needed for your specific notification data
+    
 });
 
 module.exports = mongoose.model('eStamp', model_eStamp);

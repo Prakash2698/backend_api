@@ -6,7 +6,7 @@ var express = require("express"),
 const admin = require('../controller/adminController');
 
 
-router.get("/user_list",admin.userget);
+router.get("/user_list",authToken,admin.userget);
 router.post("/addUser",admin.adminAddUser);
 router.post("/editUser/:id",admin.adminEditUser);
 router.post("/verifyKycByAdmin/:userId",authToken,admin.verifyKycByAdmin);
