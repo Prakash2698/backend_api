@@ -30,8 +30,8 @@ const model_eStamp = new mongoose.Schema({
     },
     perHitCharge: {
         type: Number,
-        required: true,
-        min: 0, // Minimum perHitCharge value
+        // required: true,
+        // min: 0, // Minimum perHitCharge value
     },
     validity: {
         type: String,
@@ -41,8 +41,8 @@ const model_eStamp = new mongoose.Schema({
     },
     monthly_hit: {
         type: Number,
-        default: 20, // Default value of 20
-        required: true,
+        // default: 20, // Default value of 20
+        // required: true,
     },
     activationTime: {
         type: Date,

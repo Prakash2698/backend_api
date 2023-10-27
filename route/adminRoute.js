@@ -14,5 +14,7 @@ router.post("/addProduct",upload.fields([{ name: 'productImage', maxCount: 1 }])
 router.post("/addservice",admin.e_Stamp);
 router.get("/getKycDocument",admin.getKycDocument);
 
+router.get("/getOneUser/:userId",admin.getOneUser);
+
 module.exports = router;
 

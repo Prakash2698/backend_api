@@ -129,6 +129,20 @@ const adminAddUser = async (req, res) => {
     }
 }
 
+const getOneUser = async(req,res)=>{
+    try {
+        const userId = req.params.userId;
+        const user = await userSchema.findById(userId);    
+        if (!user) {
+          return res.status(404).json({ success: false, msg: 'User not found' });
+        }    
+        res.status(200).json({ success: true, user });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, msg: 'An error occurred' });
+      }
+}
+
 const adminEditUser = async (req, res) => {
     try {
         const id = req.params.id;
@@ -286,7 +300,6 @@ const e_Stamp = async (req, res) => {
     // }
     try {
         const { price, perHitCharge, validity, monthly_hit } = req.body;
-
         const newEstamp = new addService({
             price,
             perHitCharge,
@@ -295,16 +308,17 @@ const e_Stamp = async (req, res) => {
         });
 
         await newEstamp.save();
-        res.status(201).json({ success: true, newEstamp });
+        res.status(201).send({ success: true, newEstamp });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, error: 'An error occurred' });
+        res.status(500).send({ success: false, error: 'An error occurred' });
     }
 }
 
 
 module.exports = {
     userget,
+    getOneUser,
     adminAddUser,
     adminEditUser,
     verifyKycByAdmin,
