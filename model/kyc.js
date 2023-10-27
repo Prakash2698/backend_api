@@ -11,15 +11,15 @@ const kycSchema = new mongoose.Schema({
         unique: true
     },
     aadharFrontImage: {
-        type: Buffer,
+        type: String,
         required: true,
     },
     aadharBackImage: {
-        type: Buffer,
+        type: String,
         required: true,
     },
     panImage: {
-        type: Buffer,
+        type: String,
         required: true,
     },
     status: {

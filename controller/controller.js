@@ -18,8 +18,71 @@ const Token = require('../model/model');
 const paymentModel = require('../model/RazorpayOnline');
 const wallet_amount = require("../model/addMoney");
 const Notification = require("../model/notificationBar");
+const jwt = require('jsonwebtoken');
 
 // ============================= start Signup start ====================================
+// const createuser = async (req, res) => {
+//     try {
+//         const { name, phone, email, password } = req.body;
+//         if (!email) {
+//             res.status(400).send({ success: false, msg: "Email is required" });
+//             return;
+//         }
+//         if (!password) {
+//             res.status(400).send({ success: false, msg: "Password is required" });
+//             return;
+//         }
+//         // Generate a unique partner ID (you can use a library like `uuid` for this)
+//         const partnerId = helper.generatePartnerId();
+//         // Check if the email already exists in the database
+//         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
+//         if (userData) {
+//             res.status(201).send({ success: false, msg: "Email or phone already exists" });
+//         } else {
+//             const hashedPassword = bcrypt.hashSync(password, 10);
+//             const newUser = new newuserSchema({
+//                 name,
+//                 phone,
+//                 email,
+//                 partnerId, // Set the partnerId
+//                 password: hashedPassword
+//             });
+//             // Save the new user to the database
+//             const user_data = await newUser.save();
+
+//             // Send an email with the partnerId
+//             const transporter = nodemailer.createTransport({
+//                 host: 'weberse.in',
+//                 port: 465,
+//                 secure: true,
+//                 auth: {
+//                   user: 'info@weberse.live',
+//                   pass:'Pp@7884294',
+//                   authMethod: 'PLAIN', // Specify the authentication method ('LOGIN' or 'PLAIN' for most email providers)
+//                 },
+//               });
+//             const mailOptions = {
+//                 from:'info@weberse.live',
+//                 to: email,
+//                 subject: partnerId,
+//                 text: `Your Partner ID is: ${partnerId}`,
+//             };
+//             transporter.sendMail(mailOptions, (error, info) => {
+//                 if (error) {
+//                     console.error(error);
+//                     res.status(400).send({ success: false, msg: "Email sending failed" });
+//                 } else {
+//                     console.log("Email sent:", info.response);
+//                     res.status(200).send({ success: true, data: user_data });
+//                 }
+//             });
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         res.status(400).send({ status: 400, message: error.message });
+//     }
+// }
+// ==============================start create user email verify  =======================
 const createuser = async (req, res) => {
     try {
         const { name, phone, email, password } = req.body;
@@ -37,50 +100,58 @@ const createuser = async (req, res) => {
         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
         if (userData) {
             res.status(201).send({ success: false, msg: "Email or phone already exists" });
-        } else {
-            const hashedPassword = bcrypt.hashSync(password, 10);
-            const newUser = new newuserSchema({
-                name,
-                phone,
-                email,
-                partnerId, // Set the partnerId
-                password: hashedPassword
-            });
-            // Save the new user to the database
-            const user_data = await newUser.save();
-            
-            // Send an email with the partnerId
-            const transporter = nodemailer.createTransport({
-                host: 'weberse.in',
-                port: 465,
-                secure: true,
-                auth: {
-                  user: 'info@weberse.live',
-                  pass:'Pp@7884294',
-                  authMethod: 'PLAIN', // Specify the authentication method ('LOGIN' or 'PLAIN' for most email providers)
-                },
-              });
-            const mailOptions = {
-                from:'info@weberse.live',
-                to: email,
-                subject: partnerId,
-                text: `Your Partner ID is: ${partnerId}`,
-            };
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error(error);
-                    res.status(400).send({ success: false, msg: "Email sending failed" });
-                } else {
-                    console.log("Email sent:", info.response);
-                    res.status(200).send({ success: true, data: user_data });
-                }
-            });
+            return;
         }
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        const newUser = new newuserSchema({
+            name,
+            phone,
+            email,
+            partnerId, // Set the partnerId
+            password: hashedPassword
+        });
+        // Save the new user to the database
+        const user_data = await newUser.save();
+
+        // Create a verification token (you can use a library like `jsonwebtoken` to create tokens)
+        const verificationToken = jwt.sign({ email },process.env.SECRET_KEY, { expiresIn: '1h' });
+        // Construct the verification link
+        const verificationLink = `https://info@weberse.live/verify?token=${verificationToken}`;
+
+        // Send an email with the partnerId and verification link
+        const transporter = nodemailer.createTransport({
+            host: 'weberse.in',
+            port: 465,
+            secure: true,
+            auth: {
+                user: 'info@weberse.live',
+                pass: 'Pp@7884294',
+                authMethod: 'PLAIN',
+            },
+        });
+        const mailOptions = {
+            from: 'info@weberse.live',
+            to: email,
+            subject: partnerId,
+            text: `Your Partner ID is: ${partnerId}\nVerify your email by clicking this link: ${verificationLink}`,
+        };
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error(error);
+                res.status(400).send({ success: false, msg: "Email sending failed" });
+            } else {
+                console.log("Email sent:", info.response);
+                res.status(200).send({ success: true, data: user_data, verificationLink });
+            }
+        });
     } catch (error) {
         console.log(error);
         res.status(400).send({ status: 400, message: error.message });
     }
-}
+};
+
+
+// ============================= END ===================================================
 
 // ============================= end Signup ===========================================
 
