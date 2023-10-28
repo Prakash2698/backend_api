@@ -421,7 +421,7 @@ const profile = async (req, res) => {
 // ================ place order api =====================================
 const user1 = async(req,res)=>{
       try {
-        const { userId, productId, quantity } = req.body;
+        const { partnerId, productId, quantity } = req.body;
         // Retrieve product details
         const product = await Product.findById(productId);
       
@@ -433,7 +433,7 @@ const user1 = async(req,res)=>{
       
         // Create a new order
         const order = new user1Schema({
-          userId,
+            partnerId,
           productId,
           quantity,
           totalPrice,
@@ -570,8 +570,7 @@ const razorpay_create_payment = async (req, res) => {
 // =============================================
 const payment_callback = async (req, res) => {
     try {
-      const { paymentId } = req.body;
-  
+      const { paymentId } = req.body;  
       // Find the payment using razorpay_order_id
       const payment = await paymentModel.findOne({ paymentId });
     //   console.log(">>>>>>>>>",payment);

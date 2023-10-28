@@ -1,18 +1,18 @@
 const mongoose = require("mongoose");
 const Business_Agreement = new mongoose.Schema({
     businessRegistrationProof: {
-    type: Buffer,
+    type: String,
     require: true,
   },
   business_PAN_CARD: {
-    type: Buffer,
-  
+    type: String,
+    require:true
   },
   BusinessGST: {
-   type: Buffer
+   type: String
   },
   agreement_file :{
-   type:Buffer,
+   type:String,
    require:true
   },
   userId:{

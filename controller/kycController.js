@@ -59,7 +59,6 @@ const userkyc = async (req, res) => {
   }
 };
 
-
 const updateKYCStatus = async(req,res)=>{
     try {
       const { kycId } = req.params;

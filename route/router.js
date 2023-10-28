@@ -11,8 +11,8 @@ router.post("/verifyotp/:phone", verifyotp);
 router.post("/resendOTP/:phone", resendOTP);
 router.get("/getProduct",getProduct);
 router.get("/profile/:userId",profile);
-router.post("/user1place",user1);
-router.get("/orderHistory",orderHistory);
+router.post("/user1place",authToken,user1);  //place order
+router.get("/orderHistory",orderHistory);  // get all order
 router.post("/reset_password_request",reset_password_request);
 router.get("/reset_password_set/:token", reset_password_set);
 router.post("/razorpay_create_payment",authToken,razorpay_create_payment);
