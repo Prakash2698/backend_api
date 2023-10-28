@@ -8,6 +8,7 @@ const helper = require("../helper/helper");
 const nodemailer = require('nodemailer');
 
 const addService = require("../model/admin/modelEStamp");
+const orderEstampService = require("../model/admin/orderEstamService");
 
 
 const userget = async (req, res) => {
@@ -279,7 +280,7 @@ const addProduct = async (req, res) => {
         res.status(400).send({ status: 400, message: "product add faield" });
     }
 };
-// =============== eStamp api ======================================
+// =============== addService eStamp api ======================================
 const e_Stamp = async (req, res) => {
     // try {
     //     const { price, perHitCharge, validity } = req.body;
@@ -315,6 +316,29 @@ const e_Stamp = async (req, res) => {
     }
 }
 
+//   =============== Validity date expiration ==================================
+const checkValidityExpiration = async(req,res)=>{
+    try {
+        // Calculate the date 30 or 31 days ago
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() - 30); // Change to 31 for 31 days
+    
+        // Find service orders with 'success' status and a created date older than the expiration date
+        const expiredOrders = await orderEstampService.find({
+          status: 'sucess',
+          created: { $lt: expirationDate },
+        });
+    
+        res.status(200).json({
+          message: 'Expired service orders found',
+          expiredOrders: expiredOrders,
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred' });
+      }
+}
+  
 
 module.exports = {
     userget,
@@ -324,5 +348,6 @@ module.exports = {
     verifyKycByAdmin,
     getKycDocument,
     addProduct,
-    e_Stamp
+    e_Stamp,
+    checkValidityExpiration
 }

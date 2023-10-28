@@ -7,9 +7,14 @@ const user1Schema = new mongoose.Schema({
     required: true,
   },
   // Reference to the product in the order
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+  productId: { 
+    type: mongoose.Schema.Types.ObjectId, ref: "Product" 
+  },
+
   quantity: Number,
+
   totalPrice: Number,
+  
   status: {
     type: String,
     enum: ['sucess', 'pending'],

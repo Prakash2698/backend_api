@@ -73,6 +73,24 @@ generatePartnerId: () => {
   serialNumber++;
   const paddedSerialNumber = serialNumber.toString().padStart(6, '0'); // Ensure the serial number is 6 digits long with leading zeros
   return `DEP${paddedSerialNumber}`;
+},
+
+calculateTotalPrice(service, validity) {
+  if (service && service.price) {
+    const price = service.price;      
+    switch (validity) {
+      case '7days':
+        return price;
+      case 'monthly':
+        return price * 4; // Assuming a month is considered as 4 weeks
+      case 'yearly':
+        return price * 52; // Assuming a year is considered as 52 weeks
+      // Add more cases for other validity options
+      default:
+        return price;
+    }
+  }  
+  return 0; // Return a default value if service or price is missing
 }
 
 }

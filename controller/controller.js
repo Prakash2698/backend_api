@@ -19,6 +19,9 @@ const paymentModel = require('../model/RazorpayOnline');
 const wallet_amount = require("../model/addMoney");
 const Notification = require("../model/notificationBar");
 const jwt = require('jsonwebtoken');
+const serviceOrder = require('../model/admin/orderEstamService');
+const findEstampService = require('../model/admin/modelEStamp');
+const servicePaymentCreate = require('../model/servicepaymentmodel');
 
 // ============================= start Signup start ====================================
 // const createuser = async (req, res) => {
@@ -418,7 +421,7 @@ const profile = async (req, res) => {
         console.log(error);
     }
 }
-// ================ place order api =====================================
+// ================ place order product api ==============================
 const user1 = async(req,res)=>{
       try {
         const { partnerId, productId, quantity } = req.body;
@@ -447,7 +450,43 @@ const user1 = async(req,res)=>{
       }   
   };
  
-//   ============== order history ===========================================
+// =============== service order api start ====================================
+// Define a function to calculate the total price based on the service and validity
+  
+const orderEstampService = async(req,res)=>{
+    try {
+        const { partnerId, serviceId, validity } = req.body;
+    
+        // Retrieve product details
+        const service = await findEstampService.findById(serviceId);
+    
+        if (!service) {
+          return res.status(404).json({ message: "Service not found" });
+        }
+    
+        // You can calculate the totalPrice here based on the service and validity, if needed
+        const totalPrice = helper.calculateTotalPrice(service, validity);    
+        // Create a new order
+        const newServiceOrder = new serviceOrder({
+          partnerId,
+          serviceId,
+          validity,
+          totalPrice, // Uncomment this line if you calculate the total price
+        });
+    
+        // Save the service order to the database
+        const savedServiceOrder = await newServiceOrder.save();
+    
+        res.status(201).json(savedServiceOrder);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error creating service order' });
+      }
+};
+
+
+
+//   ============== order history ========================================
 const orderHistory = async(req,res)=>{
     const history = await user1Schema.find()
     if (!history) {
@@ -456,7 +495,7 @@ const orderHistory = async(req,res)=>{
        res.send({status:200, sucess:true,result:history}) 
     }
 }
-// ================ PAYMENT gateway Razorpay START ===========================
+// ================ PAYMENT gateway Razorpay START =========================
 
 // Create a route for initiating a payment
 // const razorpay_create_payment = async (req, res) => {
@@ -489,12 +528,12 @@ const orderHistory = async(req,res)=>{
 //       }    
 // };
 
-// ============================= razor_pay ===========================================
+// ============================= razor_pay =====================================
 const razorpay = new Razorpay({
     key_id: 'rzp_test_AOjY52pvdqhUEh',
     key_secret: 'tB1CHTW3BvEb9TR06ILUCBWV',
 });
-// ============================razor_pay end===========================================
+// ============================razor_pay end ===================================
 // const razorpay_create_payment = async(req,res)=>{
 //     try {
 //         const { amount, userId,partnerId, description } = req.body;    
@@ -567,10 +606,45 @@ const razorpay_create_payment = async (req, res) => {
     }
   };
   
-// =============================================
+
+//   =================== create payment for services =========================
+const services_create_payment = async (req, res) => {
+    try {
+      const { amount, partnerId, description } = req.body;
+      // Create a Razorpay order
+      const options = {
+        amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+        currency: "INR",
+        payment_capture: 1, // Auto-capture payment
+      };
+  
+      const order = await razorpay.orders.create(options);
+      // Create a Payment document in MongoDB
+      const payment = new servicePaymentCreate({
+        serviceId: new mongoose.Types.ObjectId(), // Generate a new ObjectId
+        // serviceId:serviceId,
+        partnerId: partnerId, // Use the partnerId string directly
+        paymentId: order.id,
+        amount: amount,
+        description: description,
+      });  
+      // Save the Payment document and await the Promise
+      const savedPayment = await payment.save();  
+      res.status(200).json({
+        message: "Payment success",
+        payment: savedPayment,
+        razorpayOrder: order,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "An error occurred" });
+    }
+  };
+  
+// ======================= confirm product payment ============================
 const payment_callback = async (req, res) => {
     try {
-      const { paymentId } = req.body;  
+      const { paymentId,productId } = req.body;  
       // Find the payment using razorpay_order_id
       const payment = await paymentModel.findOne({ paymentId });
     //   console.log(">>>>>>>>>",payment);
@@ -581,13 +655,47 @@ const payment_callback = async (req, res) => {
       // Update the payment status to "confirmed"
       payment.status = 'confirmed';
       await payment.save();
-  
-      res.status(200).json({ message: 'payment_confirmed' });
+      const order = await user1Schema.findOne({productId});
+      if (!order) {
+        return res.status(404).json({ error: 'order not found' });
+      } 
+     order.status = 'sucess';
+     await order.save();
+
+      res.status(200).json({ message: 'payment_confirmed and order sucess' });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'An error occurred' });
     }
   };
+
+// const services_payment_success =async(req,res)=>{
+//     try {
+//         const paymentId = req.body;  
+//         const serviceOId = req.body._id;
+//         // Find the payment using razorpay_order_id
+//         const payment = await servicePaymentCreate.findOne({ paymentId });
+//       //   console.log(">>>>>>>>>",payment);    
+//         if (!payment) {
+//           return res.status(404).json({ error: 'Payment not found' });
+//         }  
+//         // Update the payment status to "confirmed"
+//         payment.status = 'confirmed';
+//         await payment.save();
+//         const order = await serviceOrder.findById({serviceOId});
+//         if (!order) {
+//           return res.status(404).json({ error: 'services not found' });
+//         } 
+//        order.status = 'sucess';
+//        await order.save();
+
+//         res.status(200).json({ message: 'payment_confirmed and services sucess' });
+//       } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'An error occurred' });
+//       }
+
+// }
     
 // ================ PAYMENT gateway Razorpay END ==============================
 
@@ -630,6 +738,61 @@ const payment_callback = async (req, res) => {
 //         res.status(500).json({ success: false, msg: 'An error occurred' });
 //       }
 // }
+
+const services_payment_success = async (req, res) => {
+    try {
+      const { paymentId, serviceOId } = req.body; // Destructure paymentId and serviceOId
+  
+      // Find the payment using the provided paymentId
+      const payment = await servicePaymentCreate.findOne({ paymentId });  
+      if (!payment) {
+        return res.status(404).json({ error: 'Payment not found' });
+      }
+  
+      // Update the payment status to "confirmed"
+      payment.status = 'confirmed';
+      await payment.save();
+  
+      // Find the service order using the provided serviceOId
+      const order = await serviceOrder.findById(serviceOId);
+  
+      if (!order) {
+        return res.status(404).json({ error: 'Service order not found' });
+      }
+      // Update the service order status to 'success'
+      order.status = 'sucess';
+      await order.save();
+  
+      res.status(200).json({ message: 'Payment confirmed and service marked as successful' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  };
+
+//   =============== Validity date expiration ==================================
+const checkValidityExpiration = async(req,res)=>{
+    try {
+        // Calculate the date 30 or 31 days ago
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() - 30); // Change to 31 for 31 days
+    
+        // Find service orders with 'success' status and a created date older than the expiration date
+        const expiredOrders = await serviceOrder.find({
+          status: 'sucess',
+          created: { $lt: expirationDate },
+        });
+    
+        res.status(200).json({
+          message: 'Expired service orders found',
+          expiredOrders: expiredOrders,
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred' });
+      }
+}
+  
 
 const add_Money = async (req, res) => {
     try {
@@ -699,7 +862,7 @@ const add_Money = async (req, res) => {
         res.status(500).json({ success: false, error: 'An error occurred' });
       }
   }
-// ================== if user login he change this password doing ==========================
+// ============== if user login he change this password doing =================
 const { check, validationResult } = require('express-validator');
 const loginUserchangePassword = async(req,res)=>{
     try {
@@ -741,12 +904,16 @@ module.exports = {
     resendOTP,
     getProduct,
     profile,
-    user1,
+    user1, // order product
+    orderEstampService, // order service
     orderHistory,
     reset_password_request,
     reset_password_set,
-    razorpay_create_payment,
+    razorpay_create_payment, // product payment
+    services_create_payment, //services payment 
     payment_callback,
+    services_payment_success, // services_payment_success
+    checkValidityExpiration,
     add_Money,
     notification,
     getNotification,
