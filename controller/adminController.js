@@ -78,12 +78,12 @@ const adminAddUser = async (req, res) => {
         const userData = await userSchema.findOne({ email: email } && { phone: phone });
         if (userData) {
             res.status(201).send({ success: false, msg: "Email or phone already exists" });
-        }else{
+        } else {
             // Hash the user's password
             const hashedPassword = bcrypt.hashSync(password, 10);
             // Generate a token for the user
             const token = jwt.sign({ email }, process.env.SECRET_KEY); // Replace 'your-secret-key' with a secret key
-    
+
             // Create a new user instance
             const newUser = new userSchema({
                 name,
@@ -92,7 +92,7 @@ const adminAddUser = async (req, res) => {
                 password: hashedPassword,
                 partnerId,
                 token,
-            });    
+            });
             // Save the new user to the database
             const user_data = await newUser.save();
             // res.status(200).json({ success: true, data: user_data });
@@ -102,13 +102,13 @@ const adminAddUser = async (req, res) => {
                 port: 465,
                 secure: true,
                 auth: {
-                  user: 'info@weberse.live',
-                  pass:'Pp@7884294',
-                  authMethod: 'PLAIN', // Specify the authentication method ('LOGIN' or 'PLAIN' for most email providers)
+                    user: 'info@weberse.live',
+                    pass: 'Pp@7884294',
+                    authMethod: 'PLAIN', // Specify the authentication method ('LOGIN' or 'PLAIN' for most email providers)
                 },
-              });
+            });
             const mailOptions = {
-                from:'info@weberse.live',
+                from: 'info@weberse.live',
                 to: email,
                 subject: partnerId,
                 text: `Your Partner ID is: ${partnerId}`,
@@ -130,18 +130,18 @@ const adminAddUser = async (req, res) => {
     }
 }
 
-const getOneUser = async(req,res)=>{
+const getOneUser = async (req, res) => {
     try {
         const userId = req.params.userId;
-        const user = await userSchema.findById(userId);    
+        const user = await userSchema.findById(userId);
         if (!user) {
-          return res.status(404).json({ success: false, msg: 'User not found' });
-        }    
+            return res.status(404).json({ success: false, msg: 'User not found' });
+        }
         res.status(200).json({ success: true, user });
-      } catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, msg: 'An error occurred' });
-      }
+    }
 }
 
 const adminEditUser = async (req, res) => {
@@ -208,7 +208,7 @@ const verifyKycByAdmin = async (req, res) => {
         res.status(400).send({ status: 400, message: error.message });
     }
 };
-const getKycDocument = async(req,res)=>{
+const getKycDocument = async (req, res) => {
     try {
         const userList = await verifyKyc.find()
         console.log(userList, ">>>>>>>>>>...");
@@ -253,7 +253,7 @@ const getKycDocument = async(req,res)=>{
 
 const addProduct = async (req, res) => {
     try {
-        const { productName, category, productPrice, description } = req.body; // Destructure the request body        
+        const { productName, category, productPrice, description,productLink } = req.body; // Destructure the request body        
         const productImage = req.files.productImage;
         // Check if the email already exists in the database using the check.findUser function
         const find = await product.findOne({ productName: productName });
@@ -267,7 +267,8 @@ const addProduct = async (req, res) => {
                 category,
                 productImage,
                 productPrice,
-                description
+                description,
+                productLink
             });
             // console.log(">>>>>>>>>>>>>>>>>>...",add_product);
             // Save the product to the database
@@ -317,28 +318,94 @@ const e_Stamp = async (req, res) => {
 }
 
 //   =============== Validity date expiration ==================================
-const checkValidityExpiration = async(req,res)=>{
+const checkValidityExpiration = async (req, res) => {
     try {
-        // Calculate the date 30 or 31 days ago
-        const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() - 30); // Change to 31 for 31 days
+        const orderId = req.params.orderId;    
+        if (orderId) {
+          // Find the service order by _id
+          const order = await orderEstampService.findById(orderId);
     
-        // Find service orders with 'success' status and a created date older than the expiration date
-        const expiredOrders = await orderEstampService.find({
-          status: 'sucess',
-          created: { $lt: expirationDate },
-        });
+          if (!order) {
+            return res.status(404).json({ message: 'Service order not found' });
+          }
     
-        res.status(200).json({
-          message: 'Expired service orders found',
-          expiredOrders: expiredOrders,
-        });
+          // Calculate expiration date based on the validity
+          let expirationDate = new Date(order.created);
+          switch (order.validity) {
+            case '7days':
+              expirationDate.setDate(expirationDate.getDate() + 7);
+              break;
+            case 'monthly':
+              expirationDate.setMonth(expirationDate.getMonth() + 1);
+              break;
+            case 'yearly':
+              expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+              break;
+            case 'life_Time':
+              // No expiration for 'life_Time'
+              break;
+            default:
+              return res.status(400).json({ message: 'Invalid validity' });
+          }
+    
+          // Check if the order has expired
+          const currentDate = new Date();
+          const isExpired = currentDate > expirationDate;
+    
+          // Update the status to 'expired' if the order is expired
+          if (isExpired) {
+            order.status = 'expired';
+            await order.save();
+          }
+    
+          res.status(200).json({
+            message: 'Service order validity checked',
+            order,
+            isExpired,
+          });
+        } else {
+          // Find service orders with 'success' status
+          const validOrders = await orderEstampService.find({ status: 'success' });
+    
+          // Calculate the current date
+          const currentDate = new Date();
+    
+          // Update status and check validity for each order
+          validOrders.forEach(async (order) => {
+            // Calculate expiration date based on the validity
+            let expirationDate = new Date(order.created);
+            switch (order.validity) {
+              case '7days':
+                expirationDate.setDate(expirationDate.getDate() + 7);
+                break;
+              case 'monthly':
+                expirationDate.setMonth(expirationDate.getMonth() + 1);
+                break;
+              case 'yearly':
+                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                break;
+              case 'life_Time':
+                // No expiration for 'life_Time'
+                break;
+              default:
+                return;
+            }
+    
+            if (currentDate > expirationDate) {
+              // If expired, update the order status to 'expired'
+              order.status = 'failed';
+              await order.save();
+            }
+          });
+    
+          res.status(200).json({ message: 'Service order validity checked and status updated' });
+        }
       } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred' });
       }
 }
-  
+
 
 module.exports = {
     userget,

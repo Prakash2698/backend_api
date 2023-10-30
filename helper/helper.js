@@ -70,8 +70,12 @@ module.exports = {
 //     return `DEP${uuidv4()}`;
 // }
 generatePartnerId: () => {
-  serialNumber++;
-  const paddedSerialNumber = serialNumber.toString().padStart(6, '0'); // Ensure the serial number is 6 digits long with leading zeros
+  // serialNumber++;
+  // const paddedSerialNumber = serialNumber.toString().padStart(6, '0'); // Ensure the serial number is 6 digits long with leading zeros
+  // return `DEP${paddedSerialNumber}`;
+  // Increment the serialNumber as a string
+  serialNumber = (parseInt(serialNumber) + 1).toString();
+  const paddedSerialNumber = serialNumber.padStart(6, "0");
   return `DEP${paddedSerialNumber}`;
 },
 

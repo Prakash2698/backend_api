@@ -3,6 +3,7 @@ var express = require("express"),
  const multer = require("multer");
  const authToken = require("../middleware/auth")
  const {userkyc,updateKYCStatus} = require("../controller/kycController")
+ 
  const upload = multer({ dest: 'uploads/' });
 
 // console.log(">>>>Route");

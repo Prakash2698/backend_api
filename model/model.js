@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema({
   },
   partnerId:{
     type: String,
+    unique: true,
     required: true
   },
   wallet_amount: {

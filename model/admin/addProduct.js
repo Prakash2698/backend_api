@@ -21,6 +21,10 @@ const addProduct = new mongoose.Schema({
   description:{
     type: String,
   },
+  productLink: {
+    type: String, // Store the download link here
+    required: true, // You can make it optional if needed
+  },
   // userId:{
   //     type: mongoose.Schema.Types.ObjectId,
   //     ref:'user'
