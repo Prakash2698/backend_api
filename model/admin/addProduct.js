@@ -11,7 +11,7 @@ const addProduct = new mongoose.Schema({
     required: true,
   },
   productImage: {
-    type: Buffer,
+    type: String,
     required: true,
   },
   productPrice: {

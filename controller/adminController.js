@@ -343,10 +343,11 @@ const getbussinessA = async(req,res)=>{
 const addProduct = async (req, res) => {
     try {
         const { productName, category, productPrice, description, productLink } = req.body; // Destructure the request body        
-        const productImage = req.files.productImage;
+        const productImage = req.file.path;
+        // console.log(req.file);
+        // return
         // Check if the email already exists in the database using the check.findUser function
         const find = await product.findOne({ productName: productName });
-
         if (find) {
             res.status(201).send({ success: false, msg: "product already exists" });
         } else {
