@@ -4,7 +4,7 @@ const user1Schema = new mongoose.Schema({
   // Reference to the user who placed the order
   partnerId: {
     type: String,
-    required: true,
+    // required: true,
   },
   // Reference to the product in the order
   productId: { 

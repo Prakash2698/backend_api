@@ -12,6 +12,7 @@ const orderEstampService = require("../model/admin/orderEstamService");
 // const bussiness_agreement = require("../model/businessAgreement");
 
 const bussiness_agreement = require("../model/businessAgreement");
+const logoImage = require("../model/admin/websiteSettingLOGO");
 
 
 const userget = async (req, res) => {
@@ -296,7 +297,7 @@ const getKycDocument = async (req, res) => {
     }
 }
 
-const getbussinessA = async(req,res)=>{
+const getbussinessA = async (req, res) => {
     try {
         const bussinessagreement = await bussiness_agreement.find()
         console.log(bussinessagreement, ">>>>>>>>>>...");
@@ -308,7 +309,6 @@ const getbussinessA = async(req,res)=>{
         console.log(error)
     }
 }
-
 
 // const addProduct = async (req, res) => {
 //     try {
@@ -406,7 +406,6 @@ const e_Stamp = async (req, res) => {
         res.status(500).send({ success: false, error: 'An error occurred' });
     }
 }
-
 //   =============== Validity date expiration ==================================
 const checkValidityExpiration = async (req, res) => {
     try {
@@ -496,6 +495,29 @@ const checkValidityExpiration = async (req, res) => {
     }
 }
 
+const logo = async (req, res) => {
+    try {
+        const { name, websiteIS } = req.body;
+        const logo = req.files.logo[0].path;
+        console.log(req.files);
+        const newLogo = req.files.newLogo[0].path ;
+        const logo_Image = new logoImage({
+            name,
+            logo,
+            newLogo,
+            websiteIS
+        })
+        await logo_Image.save();
+        if (!logo_Image) {
+            res.send({ status: 402, message: "deatiles not found" });
+        }
+        res.send({ status: 200, message: "logo uploaded", result: logo_Image });
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
 
 module.exports = {
     userget,
@@ -507,7 +529,8 @@ module.exports = {
     getbussinessA,
     addProduct,
     e_Stamp,
-    checkValidityExpiration
+    checkValidityExpiration,
+    logo
 }
 
 

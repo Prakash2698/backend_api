@@ -212,7 +212,11 @@ const user_login = async (req, res) => {
         // Compare the provided password with the hashed password in the database
         const passwordMatch = await bcrypt.compare(password, user.password);
         // console.log("password>>>>>>>>>>>>>>>>>",password);
-        console.log(passwordMatch)
+        const partnerIdMatch = await bcrypt.compare(partnerId, user.partnerId);
+        if (!partnerIdMatch) {
+          return res.status(401).json({ success: false, message: "Incorrect partnerId" });
+      }
+        // console.log(passwordMatch)
         if (!passwordMatch) {
             return res.status(401).json({ success: false, message: "Incorrect password" });
         }
@@ -426,7 +430,7 @@ const profile = async (req, res) => {
 // ================ product order product api ===========================
 const orderProduct = async(req,res)=>{
       try {
-        const { partnerId, productId, quantity } = req.body;
+        const { productId, quantity } = req.body;
         // Retrieve product details
         const product = await Product.findById(productId);      
         if (!product) {
@@ -436,7 +440,7 @@ const orderProduct = async(req,res)=>{
         const totalPrice = product.productPrice * quantity;      
         // Create a new order
         const order = new order_ProductModel({
-          partnerId,
+          // partnerId,
           productId,
           quantity,
           totalPrice,
