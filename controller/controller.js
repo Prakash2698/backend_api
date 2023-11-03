@@ -10,8 +10,7 @@ const helper = require("../helper/helper");
 const OtpSchema = require("../model/otp");
 const productList = require("../model/admin/addProduct");
 const kycSchema = require("../model/kyc");
-const user1Schema = require("../model/user1");
-const orders = require('../model/user1');
+const order_ProductModel = require("../model/user1"); // orders
 const Product = require("../model/admin/addProduct");
 const Razorpay = require('razorpay');
 const Token = require('../model/model');
@@ -22,6 +21,7 @@ const jwt = require('jsonwebtoken');
 const serviceOrder = require('../model/admin/orderEstamService');
 const findEstampService = require('../model/admin/modelEStamp');
 const servicePaymentCreate = require('../model/servicepaymentmodel');
+const addService = require("../model/admin/modelEStamp");
 
 // ============================= start Signup start ====================================
 // const createuser = async (req, res) => {
@@ -99,6 +99,8 @@ const createuser = async (req, res) => {
         }
         // Generate a unique partner ID (you can use a library like `uuid` for this)
         const partnerId = helper.generatePartnerId();
+         // Hash the partnerId
+    const hashedPartnerId = bcrypt.hashSync(partnerId, 10);
         // Check if the email already exists in the database
         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
         if (userData) {
@@ -110,7 +112,7 @@ const createuser = async (req, res) => {
             name,
             phone,
             email,
-            partnerId, // Set the partnerId
+            partnerId:hashedPartnerId, // Set the partnerId
             password: hashedPassword
         });
         // Save the new user to the database
@@ -119,7 +121,7 @@ const createuser = async (req, res) => {
         // Create a verification token (you can use a library like `jsonwebtoken` to create tokens)
         const verificationToken = jwt.sign({ email },process.env.SECRET_KEY, { expiresIn: '1h' });
         // Construct the verification link
-        const verificationLink = `https://info@weberse.live/verify?token=${verificationToken}`;
+        const verificationLink = `https://infoweberse.live/verify?token=${verificationToken}`;
 
         // Send an email with the partnerId and verification link
         const transporter = nodemailer.createTransport({
@@ -153,7 +155,6 @@ const createuser = async (req, res) => {
     }
 };
 
-
 // ============================= END ===================================================
 
 // ============================= end Signup ===========================================
@@ -166,10 +167,9 @@ const createuser = async (req, res) => {
 //   }
 
 // ============================= login user start ===========================================
-const login = async (req, res) => {
+const login = async (req, res) => {   // otp send on number
     try {
-        const phone = req.body.phone;
-        
+        const phone = req.body.phone;        
         const user = await newuserSchema.findOne({ phone: phone });
         if (!user) {
             return res.status(401).json({ message: 'please check your number' });
@@ -192,6 +192,7 @@ const login = async (req, res) => {
         res.status(500).send("somethings went wrong");
     }
 }
+
 // ============================= login end ======================================================
 // =========================== api user_login ========================================
 const user_login = async (req, res) => {
@@ -201,14 +202,13 @@ const user_login = async (req, res) => {
         if (!partnerId || !password) {
             return res.status(400).json({ success: false, message: "Both partnerId and password are required" });
         }
-
         // Find the user in the database by partnerId
         const user = await newuserSchema.findOne({partnerId });
         //   console.log(">>>>>>>>.",user);
         if (!user) {
             return res.status(401).json({ success: false, message: "User not found" });
         }
-        console.log(user.password)
+        // console.log(user.password)
         // Compare the provided password with the hashed password in the database
         const passwordMatch = await bcrypt.compare(password, user.password);
         // console.log("password>>>>>>>>>>>>>>>>>",password);
@@ -216,8 +216,11 @@ const user_login = async (req, res) => {
         if (!passwordMatch) {
             return res.status(401).json({ success: false, message: "Incorrect password" });
         }
+         const { _id, phoneNo } = user
+        const token = helper.createJwtToken({ _id, phoneNo });
+        // res.send({ message: "Otp verify successfully", token: token });
         // You can generate a token here for authentication if needed
-        res.status(200).json({ success: true, message: "Login successful" , result:user });
+        res.status(200).json({ success: true, message: "Login successful" , result:user ,token});
 
     } catch (error) {
         console.log(error);
@@ -242,13 +245,16 @@ const verifyotp = async (req, res) => {
         if (!user) {
             res.send({ message: "User not found" });
         }
-        const { _id, phoneNo } = user
-        const token = helper.createJwtToken({ _id, phoneNo });
-        res.send({ message: "Otp verify successfully", token: token });
+
+        // const { _id, phoneNo } = user
+        // const token = helper.createJwtToken({ _id, phoneNo });
+        // res.send({ message: "Otp verify successfully", token: token });
+        res.send({ message: "Otp verify successfully" });
     } catch (error) {
         res.send({ message: "not_found" });
     }
 }
+
 // ============================= verify_otp end ===========================================
 // const login = async (req, res) => {
 //     try {
@@ -352,7 +358,6 @@ const reset_password_request = async (req, res) => {
         res.status(500).send({ message: 'An error occurred while processing your request' });
     }
 }
-
 // Reset Password SET
 const reset_password_set = async (req, res) => {
     try {
@@ -382,7 +387,6 @@ const reset_password_set = async (req, res) => {
         res.status(500).json({ message: 'An error occurred while processing your request' });
     }
 };
-
 const getProduct = async (req, res) => {
     try {
         const findProduct = await productList.find()
@@ -396,8 +400,6 @@ const getProduct = async (req, res) => {
     }
 
 }
-
-
 // ============================ user profile ============================
 const profile = async (req, res) => {
     try {
@@ -421,27 +423,24 @@ const profile = async (req, res) => {
         console.log(error);
     }
 }
-// ================ place order product api ==============================
-const user1 = async(req,res)=>{
+// ================ product order product api ===========================
+const orderProduct = async(req,res)=>{
       try {
         const { partnerId, productId, quantity } = req.body;
         // Retrieve product details
-        const product = await Product.findById(productId);
-      
+        const product = await Product.findById(productId);      
         if (!product) {
           return res.status(404).json({ message: "Product not found" });
         }      
         // Calculate total price
-        const totalPrice = product.productPrice * quantity;
-      
+        const totalPrice = product.productPrice * quantity;      
         // Create a new order
-        const order = new user1Schema({
-            partnerId,
+        const order = new order_ProductModel({
+          partnerId,
           productId,
           quantity,
           totalPrice,
-        });
-      
+        });      
         const savedOrder = await order.save();
         res.status(201).json(savedOrder);
         
@@ -449,7 +448,6 @@ const user1 = async(req,res)=>{
         console.log(error);
       }   
   };
- 
 // =============== service order api start ====================================
 // Define a function to calculate the total price based on the service and validity
   
@@ -485,7 +483,6 @@ const orderEstampService = async(req,res)=>{
 };
 
 
-
 //   ============== order history ========================================
 const orderHistory = async(req,res)=>{
     const history = await user1Schema.find()
@@ -498,105 +495,87 @@ const orderHistory = async(req,res)=>{
 // ================ PAYMENT gateway Razorpay START =========================
 
 // Create a route for initiating a payment
-// const razorpay_create_payment = async (req, res) => {
-//     try {
-//         const { amount ,userId} = req.body;    
-//         const options = {
-//           amount: amount * 100, // Amount in paise (1 INR = 100 paise)
-//           currency: 'INR',
-//         //   receipt: orderId,
-//           payment_capture: 1, // Auto-capture payment
-//         };    
-//         razorpay.orders.create(options, (err, orders) => {
-//           if (err) {
-//             console.log(err);
-//             return res.status(500).send({ error: 'Error creating Razorpay order' });
-//           }    
-//           // Save the order ID to your database (optional)
-//       // Create a Payment document in MongoDB
-//       const payment = new paymentModel({
-//         orderId: orders._id,  
-//         amount: amount,
-//       });
-//       console.log(">>>>>ppppppppppp",payment);
-//     const paymenOrder = payment.save();
-//           res.send({status:200, message:"payment sucess",result:paymenOrder});
-//         });
-//       } catch (error) {
-//         console.error(error);
-//         res.status(500).send({ error: 'An error occurred' });
-//       }    
-// };
-
 // ============================= razor_pay =====================================
 const razorpay = new Razorpay({
     key_id: 'rzp_test_AOjY52pvdqhUEh',
     key_secret: 'tB1CHTW3BvEb9TR06ILUCBWV',
 });
 // ============================razor_pay end ===================================
-// const razorpay_create_payment = async(req,res)=>{
-//     try {
-//         const { amount, userId,partnerId, description } = req.body;    
-//         // Create a Razorpay order
-//         const options = {
-//           amount: amount * 100, // Amount in paise (1 INR = 100 paise)
-//           currency: "INR",
-//           payment_capture: 1, // Auto-capture payment
-//         };
+
+const razorpay_create_paymentt = async(req,res)=>{
+    try {
+        const { amount, userId,partnerId, description } = req.body;    
+        // Create a Razorpay order
+        const options = {
+          amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+          currency: "INR",
+          payment_capture: 1, // Auto-capture payment
+        };
     
-//         const order = await razorpay.orders.create(options);
-//         // Generate a new ObjectId
-//         const validObjectId = new mongoose.Types.ObjectId(); 
-//         const validPartnerId = new mongoose.Types.ObjectId({partnerId});   
-//         // Create a Payment document in MongoDB
-//         const payment = new paymentModel({
-//           orderId: validObjectId,
-//           userId: userId,
-//           partnerId:validPartnerId,
-//           paymentId: order.id,
-//           amount: amount,
-//           description: description,
-//         });
+        const order = await razorpay.orders.create(options);
+        // Generate a new ObjectId
+        const validObjectId = new mongoose.Types.ObjectId(); 
+        const validPartnerId = new mongoose.Types.ObjectId({partnerId});   
+        // Create a Payment document in MongoDB
+        const payment = new paymentModel({
+          orderId: validObjectId,
+          userId: userId,
+          partnerId:validPartnerId,
+          paymentId: order.id,
+          amount: amount,
+          description: description,
+        });
     
-//         // Save the Payment document and await the Promise
-//         const savedPayment = await payment.save();
+        // Save the Payment document and await the Promise
+        const savedPayment = await payment.save();
     
-//         res.status(200).json({
-//           message: "Payment success",
-//           payment: savedPayment,
-//           razorpayOrder: order,
-//         });
-//       } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: "An error occurred" });
-//       }
-// }
+        res.status(200).json({
+          message: "Payment success",
+          payment: savedPayment,
+          razorpayOrder: order,
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "An error occurred" });
+      }
+}
+
 const razorpay_create_payment = async (req, res) => {
     try {
-      const { amount, userId, partnerId, description } = req.body;
+      const { amount, partnerId, description } = req.body;
       // Create a Razorpay order
       const options = {
         amount: amount * 100, // Amount in paise (1 INR = 100 paise)
         currency: "INR",
         payment_capture: 1, // Auto-capture payment
-      };
-  
+      };  
       const order = await razorpay.orders.create(options);
+       // Find the user by partnerId
+    // const user = await newuserSchema.findOne({ partnerId });
+    // if (!user) {
+    //   return res.status(404).json({ error: "User not found" });
+    // }
+    // // Update the user's wallet_amount
+    // user.wallet_amount -= amount;
+
+    // Save the updated user
+    // await user.save();
       // Create a Payment document in MongoDB
       const payment = new paymentModel({
         orderId:new mongoose.Types.ObjectId(), // Generate a new ObjectId
-        userId: userId,
+        // userId: userId,
         partnerId: partnerId, // Use the partnerId string directly
         paymentId: order.id,
         amount: amount,
         description: description,
       });
-  
+        // const update_wallet = await newuserSchema.findOneAndUpdate({partnerId})
+        // update_wallet.wallet_amount -= update_wallet;
+        // update_wallet.wallet_amount.save();
       // Save the Payment document and await the Promise
-      const savedPayment = await payment.save();
-  
+      const savedPayment = await payment.save();  
       res.status(200).json({
-        message: "Payment success",
+        message: "Payment created",
         payment: savedPayment,
         razorpayOrder: order,
       });
@@ -604,8 +583,34 @@ const razorpay_create_payment = async (req, res) => {
       console.error(error);
       res.status(500).json({ error: "An error occurred" });
     }
-  };
+  };  
+  // ======================= confirm product payment ============================
+  const payment_callback = async (req, res) => {
+      try {
+        const { paymentId,orderId } = req.body;  
+        // Find the payment using razorpay_order_id
+        const payment = await paymentModel.findOne({ paymentId });
+      //   console.log(">>>>>>>>>",payment);
+    
+        if (!payment) {
+          return res.status(404).json({ error: 'Payment not found' });
+        }  
+        // Update the payment status to "confirmed"
+        payment.status = 'confirmed';
+        await payment.save();
+        const order = await order_ProductModel.findOne({orderId});
+        if (!order) {
+          return res.status(404).json({ error: 'order not found' });
+        } 
+       order.status = 'sucess';
+       await order.save();
   
+        res.status(200).json({ message: 'payment_confirmed and order sucess' });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred' });
+      }
+    };
 
 //   =================== create payment for services =========================
 const services_create_payment = async (req, res) => {
@@ -619,6 +624,17 @@ const services_create_payment = async (req, res) => {
       };
   
       const order = await razorpay.orders.create(options);
+      const user = await newuserSchema.findOne({ partnerId });
+    console.log(">>>>>>>>>>>",user);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    // Update the user's wallet_amount
+    user.wallet_amount -= amount;
+
+    // Save the updated user
+    await user.save();
       // Create a Payment document in MongoDB
       const payment = new servicePaymentCreate({
         serviceId: new mongoose.Types.ObjectId(), // Generate a new ObjectId
@@ -641,33 +657,6 @@ const services_create_payment = async (req, res) => {
     }
   };
   
-// ======================= confirm product payment ============================
-const payment_callback = async (req, res) => {
-    try {
-      const { paymentId,productId } = req.body;  
-      // Find the payment using razorpay_order_id
-      const payment = await paymentModel.findOne({ paymentId });
-    //   console.log(">>>>>>>>>",payment);
-  
-      if (!payment) {
-        return res.status(404).json({ error: 'Payment not found' });
-      }  
-      // Update the payment status to "confirmed"
-      payment.status = 'confirmed';
-      await payment.save();
-      const order = await user1Schema.findOne({productId});
-      if (!order) {
-        return res.status(404).json({ error: 'order not found' });
-      } 
-     order.status = 'sucess';
-     await order.save();
-
-      res.status(200).json({ message: 'payment_confirmed and order sucess' });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'An error occurred' });
-    }
-  };
 
 // const services_payment_success =async(req,res)=>{
 //     try {
@@ -895,6 +884,84 @@ const loginUserchangePassword = async(req,res)=>{
       }
 }
 
+// ===========generatye apiKey ==================================================
+const generate_api_key =async(req,res)=>{
+  try {
+    const { partnerId, phone } = req.body;
+    // Check if a user with the provided partnerId and phone exists in your database
+    const user = await newuserSchema.findOne({ partnerId, phone });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    // Generate the API key
+       const api_Key = helper.createJwtToken({partnerId, phone});
+    // Store the generated API key in the user's document
+    user.apiKey = api_Key;
+    await user.save();
+    res.status(200).json({ success: true, api_Key });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: 'Error generating or storing the API key' });
+  }
+}
+// ========= identify user by apikey  ===========================================
+const identifyApiKey = async (req, res) => {
+  try {
+    if(!req.user) return res.status(401).json({ error: 'User not authenticated.' });
+    console.log(req.user)
+    const { partnerId } = req.user;
+    if (!partnerId) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    const user = await newuserSchema.findOne({ partnerId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.status(200).json({ success: true, user:user._id });
+  } catch (error) {
+    // console.error('Error:', error);
+    res.status(500).json({ error: 'Error identifying the user by apiKey' });
+  }
+}
+
+// ========== Edit_User_profile_addImage ========================================
+const Edit_User_profile_addImage = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const  profileImage  = req.file.path;
+    console.log(req.file)
+
+    // Update the user's profileImage using findByIdAndUpdate
+    const user = await newuserSchema.findByIdAndUpdate(
+      id,
+      { profileImage:profileImage },
+      { new: true }
+    );
+
+    if (!user) {
+      res.status(404).send({ message: "user_not_found" });
+    } else {
+      res.send({ success: true, result: user });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({ status: 400, message: error.message });
+  }
+};
+
+const getServices = async(req,res)=>{
+  try {
+    const findServices = await addService.find();  
+    // console.log(findProduct, ">>>>>>>>>>...");
+    if (!findServices) {
+        res.send({ sucess: false, message: "productList_not_found" });
+    }
+    res.send({ sucess: true, result: findServices })
+} catch (error) {
+    console.log(error)
+}
+}
+
 
 module.exports = {
     createuser,
@@ -904,7 +971,7 @@ module.exports = {
     resendOTP,
     getProduct,
     profile,
-    user1, // order product
+    orderProduct, // order product
     orderEstampService, // order service
     orderHistory,
     reset_password_request,
@@ -917,7 +984,11 @@ module.exports = {
     add_Money,
     notification,
     getNotification,
-    loginUserchangePassword
+    loginUserchangePassword,
+    generate_api_key,
+    identifyApiKey,
+    Edit_User_profile_addImage,
+    getServices,
 }
 
 

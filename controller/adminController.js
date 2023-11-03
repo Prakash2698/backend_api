@@ -9,6 +9,9 @@ const nodemailer = require('nodemailer');
 
 const addService = require("../model/admin/modelEStamp");
 const orderEstampService = require("../model/admin/orderEstamService");
+// const bussiness_agreement = require("../model/businessAgreement");
+
+const bussiness_agreement = require("../model/businessAgreement");
 
 
 const userget = async (req, res) => {
@@ -170,44 +173,116 @@ const adminEditUser = async (req, res) => {
     }
 }
 
+// const verifyKycByAdmin = async (req, res) => {
+//     try {
+//         const userId = req.params.userId;
+//         const { kycStatus } = req.body;
+
+//         // First update: Update the "status" field in verifyKyc
+//         const firstUpdate = await verifyKyc.findOneAndUpdate(
+//             { userId: userId }, // Pass the _id directly
+//             { kycStatus: kycStatus },
+//             { new: true }
+//         );
+//         if (!firstUpdate) {
+//             res.status(404).send({ message: "User not found in verifyKyc" });
+//             return;
+//         }
+//         else {
+//             res.send({ success: true, result: firstUpdate });
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         res.status(400).send({ status: 400, message: error.message });
+//     }
+// };
+
+
+// const verifyKycByAdmin = async (req, res) => {
+//     try {
+//       const userId = req.params.userId;
+//       const { kycStatus } = req.body;
+
+//       // First update: Update the "kycStatus" field in verifyKyc
+//       const firstUpdate = await verifyKyc.findOneAndUpdate(
+//         { userId: userId },
+//         { kycStatus: kycStatus },
+//         { new: true }
+//       );
+
+//       if (!firstUpdate) {
+//         res.status(404).send({ message: "User not found in verifyKyc" });
+//         return;
+//       }
+
+//       if (kycStatus === "approved") {
+//         // If kycStatus is "approved," send an email
+//         await sendApprovalEmail(userId); // Implement this function
+//       }
+
+//       res.send({ success: true, result: firstUpdate });
+//     } catch (error) {
+//       console.error(error);
+//       res.status(400).send({ status: 400, message: error.message });
+//     }
+//   };
+
+
+
 const verifyKycByAdmin = async (req, res) => {
     try {
         const userId = req.params.userId;
-        const { status, userStatus } = req.body;
-        console.log(userId, "userId>>>>>>>>>>>>");
+        const { kycStatus } = req.body;
 
-        // First update: Update the "status" field in verifyKyc
+        // First update: Update the "kycStatus" field in verifyKyc
         const firstUpdate = await verifyKyc.findOneAndUpdate(
-            { userId: userId }, // Pass the _id directly
-            { status },
+            { userId: userId },
+            { kycStatus: kycStatus },
             { new: true }
         );
-
-        console.log("firstUpdate:", firstUpdate);
-        // Second update: Update the "userStatus" field in newuserSchema
-        const secondUpdate = await newuserSchema.findByIdAndUpdate(
-            userId, // Pass the _id directly
-            { userStatus },
-            { new: true }
-        );
-
-        console.log("secondUpdate:", secondUpdate);
-
+        // console.log(firstUpdate)
         if (!firstUpdate) {
             res.status(404).send({ message: "User not found in verifyKyc" });
             return;
         }
-
-        if (!secondUpdate) {
-            res.status(404).send({ message: "User not found in newuserSchema" });
-        } else {
-            res.send({ success: true, result: secondUpdate });
+        // Send email notification based on kycStatus
+        if (kycStatus === 'approved' || kycStatus === 'rejected' || kycStatus === 'pending') {
+            const userEmail = firstUpdate.email; // Get the user's email from your user data or elsewhere
+            console.log(userEmail);
+            // Set up Nodemailer to send an email
+            const nodemailer = require('nodemailer');
+            const transporter = nodemailer.createTransport({
+                host: 'weberse.in',
+                port: 465,
+                secure: true,
+                auth: {
+                    user: 'info@weberse.live',
+                    pass: 'Pp@7884294',
+                    authMethod: 'PLAIN',
+                }
+            });
+            const mailOptions = {
+                from: 'info@weberse.live',
+                to: userEmail,
+                subject: `KYC Status Update: ${kycStatus}`,
+                text: `Your KYC status has been updated to ${kycStatus}.`,
+            };
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error('Error sending email:', error);
+                } else {
+                    // console.log("Email sent:", info.response);
+                    console.log('Email sent:', info.response);
+                }
+            });
         }
+        res.send({ success: true, result: firstUpdate });
     } catch (error) {
         console.log(error);
         res.status(400).send({ status: 400, message: error.message });
     }
 };
+
 const getKycDocument = async (req, res) => {
     try {
         const userList = await verifyKyc.find()
@@ -220,6 +295,20 @@ const getKycDocument = async (req, res) => {
         console.log(error)
     }
 }
+
+const getbussinessA = async(req,res)=>{
+    try {
+        const bussinessagreement = await bussiness_agreement.find()
+        console.log(bussinessagreement, ">>>>>>>>>>...");
+        if (!bussiness_agreement) {
+            res.send({ sucess: false, message: "bussiness_agreement_not_found" })
+        }
+        res.send({ sucess: true, result: bussinessagreement })
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 
 // const addProduct = async (req, res) => {
 //     try {
@@ -253,7 +342,7 @@ const getKycDocument = async (req, res) => {
 
 const addProduct = async (req, res) => {
     try {
-        const { productName, category, productPrice, description,productLink } = req.body; // Destructure the request body        
+        const { productName, category, productPrice, description, productLink } = req.body; // Destructure the request body        
         const productImage = req.files.productImage;
         // Check if the email already exists in the database using the check.findUser function
         const find = await product.findOne({ productName: productName });
@@ -320,90 +409,90 @@ const e_Stamp = async (req, res) => {
 //   =============== Validity date expiration ==================================
 const checkValidityExpiration = async (req, res) => {
     try {
-        const orderId = req.params.orderId;    
+        const orderId = req.params.orderId;
         if (orderId) {
-          // Find the service order by _id
-          const order = await orderEstampService.findById(orderId);
-    
-          if (!order) {
-            return res.status(404).json({ message: 'Service order not found' });
-          }
-    
-          // Calculate expiration date based on the validity
-          let expirationDate = new Date(order.created);
-          switch (order.validity) {
-            case '7days':
-              expirationDate.setDate(expirationDate.getDate() + 7);
-              break;
-            case 'monthly':
-              expirationDate.setMonth(expirationDate.getMonth() + 1);
-              break;
-            case 'yearly':
-              expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-              break;
-            case 'life_Time':
-              // No expiration for 'life_Time'
-              break;
-            default:
-              return res.status(400).json({ message: 'Invalid validity' });
-          }
-    
-          // Check if the order has expired
-          const currentDate = new Date();
-          const isExpired = currentDate > expirationDate;
-    
-          // Update the status to 'expired' if the order is expired
-          if (isExpired) {
-            order.status = 'expired';
-            await order.save();
-          }
-    
-          res.status(200).json({
-            message: 'Service order validity checked',
-            order,
-            isExpired,
-          });
-        } else {
-          // Find service orders with 'success' status
-          const validOrders = await orderEstampService.find({ status: 'success' });
-    
-          // Calculate the current date
-          const currentDate = new Date();
-    
-          // Update status and check validity for each order
-          validOrders.forEach(async (order) => {
+            // Find the service order by _id
+            const order = await orderEstampService.findById(orderId);
+
+            if (!order) {
+                return res.status(404).json({ message: 'Service order not found' });
+            }
+
             // Calculate expiration date based on the validity
             let expirationDate = new Date(order.created);
             switch (order.validity) {
-              case '7days':
-                expirationDate.setDate(expirationDate.getDate() + 7);
-                break;
-              case 'monthly':
-                expirationDate.setMonth(expirationDate.getMonth() + 1);
-                break;
-              case 'yearly':
-                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-                break;
-              case 'life_Time':
-                // No expiration for 'life_Time'
-                break;
-              default:
-                return;
+                case '7days':
+                    expirationDate.setDate(expirationDate.getDate() + 7);
+                    break;
+                case 'monthly':
+                    expirationDate.setMonth(expirationDate.getMonth() + 1);
+                    break;
+                case 'yearly':
+                    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                    break;
+                case 'life_Time':
+                    // No expiration for 'life_Time'
+                    break;
+                default:
+                    return res.status(400).json({ message: 'Invalid validity' });
             }
-    
-            if (currentDate > expirationDate) {
-              // If expired, update the order status to 'expired'
-              order.status = 'failed';
-              await order.save();
+
+            // Check if the order has expired
+            const currentDate = new Date();
+            const isExpired = currentDate > expirationDate;
+
+            // Update the status to 'expired' if the order is expired
+            if (isExpired) {
+                order.status = 'expired';
+                await order.save();
             }
-          });
-    
-          res.status(200).json({ message: 'Service order validity checked and status updated' });
+
+            res.status(200).json({
+                message: 'Service order validity checked',
+                order,
+                isExpired,
+            });
+        } else {
+            // Find service orders with 'success' status
+            const validOrders = await orderEstampService.find({ status: 'success' });
+
+            // Calculate the current date
+            const currentDate = new Date();
+
+            // Update status and check validity for each order
+            validOrders.forEach(async (order) => {
+                // Calculate expiration date based on the validity
+                let expirationDate = new Date(order.created);
+                switch (order.validity) {
+                    case '7days':
+                        expirationDate.setDate(expirationDate.getDate() + 7);
+                        break;
+                    case 'monthly':
+                        expirationDate.setMonth(expirationDate.getMonth() + 1);
+                        break;
+                    case 'yearly':
+                        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                        break;
+                    case 'life_Time':
+                        // No expiration for 'life_Time'
+                        break;
+                    default:
+                        return;
+                }
+
+                if (currentDate > expirationDate) {
+                    // If expired, update the order status to 'expired'
+                    order.status = 'failed';
+                    await order.save();
+                }
+            });
+
+            res.status(200).json({ message: 'Service order validity checked and status updated' });
         }
-      } catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred' });
-      }
+    }
 }
 
 
@@ -414,7 +503,37 @@ module.exports = {
     adminEditUser,
     verifyKycByAdmin,
     getKycDocument,
+    getbussinessA,
     addProduct,
     e_Stamp,
     checkValidityExpiration
 }
+
+
+
+
+// const transporter = nodemailer.createTransport({
+//     host: 'weberse.in',
+//     port: 465,
+//     secure: true,
+//     auth: {
+//         user: 'info@weberse.live',
+//         pass: 'Pp@7884294',
+//         authMethod: 'PLAIN',
+//     },
+// });
+// const mailOptions = {
+//     from: 'info@weberse.live',
+//     to: email,
+//     subject: kycStatus,
+//     text: `Your Partner ID is: ${kycStatus}\nVerify your email by clicking this link: ${verificationLink}`,
+// };
+// transporter.sendMail(mailOptions, (error, info) => {
+//     if (error) {
+//         console.error(error);
+//         res.status(400).send({ success: false, msg: "Email sending failed" });
+//     } else {
+//         console.log("Email sent:", info.response);
+//         res.status(200).send({ success: true, data: user_data, verificationLink });
+//     }
+// });

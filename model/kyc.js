@@ -10,6 +10,9 @@ const kycSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    GST_Number: {
+        type: String
+    },
     aadharFrontImage: {
         type: String,
         required: true,
@@ -22,22 +25,38 @@ const kycSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    status: {
-        type: String,
-        enum: ['active', 'completed', 'pending'],
-        default: 'pending'
-    }  ,
-    userId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:'user'
+    DOB: {
+        type: Date,
+        required: true
     },
-  userStatus:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref:'user'
-}
+    Address: {
+        address: { type: String, required: true },
+        city: { type: String, required: true },
+        state: { type: String, required: true },
+        Pin_Code: { type: String, required: true },
+    },
+    phone: {
+        type: Number,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+   kycStatus: {
+        type: String,
+        enum: ['rejected', 'Approved', 'pending'],
+        default: 'pending'
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
+    },
+    userStatus: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
+    }
 
-
-
-},{ timestamps: true })
+}, { timestamps: true })
 
 module.exports = mongoose.model("kyc", kycSchema);

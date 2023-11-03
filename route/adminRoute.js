@@ -15,6 +15,7 @@ router.post("/verifyKycByAdmin/:userId",authToken,admin.verifyKycByAdmin);
 router.post("/addProduct",upload.fields([{ name: 'productImage', maxCount: 1 }]),admin.addProduct);
 router.post("/addservice",admin.e_Stamp);
 router.get("/getKycDocument",admin.getKycDocument);
+router.get("/getbussinessA",authToken,admin.getbussinessA);
 router.get("/getOneUser/:userId",admin.getOneUser);
 // ===== check validity dateTime [] 7days monthly yearly life_time ] =============
 router.get("/checkValidityExpiration/:orderId",admin.checkValidityExpiration);

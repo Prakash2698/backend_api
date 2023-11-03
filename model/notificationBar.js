@@ -4,7 +4,7 @@ const notificationSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId, // Reference to the User model
     ref: 'User',
-    required: true,
+    // required: true,
   },
   message: {
     type: String,

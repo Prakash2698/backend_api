@@ -5,6 +5,11 @@ const jwt = require("jsonwebtoken");
 let serialNumber = 0;
 // let serialNumber = 0;
 const { v4: uuidv4 } = require('uuid');
+// const crypto = require('crypto');
+const crypto = require('crypto');
+const algorithm = 'aes-256-cbc';
+const key = crypto.randomBytes(32); // Use a secure key
+const iv = crypto.randomBytes(16); // Use a secure initialization vector
 
 module.exports = {    
     // =============== check for email and phone ===================
@@ -45,16 +50,16 @@ module.exports = {
         }
     },
    
-  createJwtToken: (payload) => {
-    return jwt.sign(payload, process.env.SECRET_KEY, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
-  },
+  // createJwtToken: (payload) => {
+  //   return jwt.sign(payload, process.env.SECRET_KEY, {
+  //     expiresIn: process.env.JWT_EXPIRES_IN,
+  //   });
+  // },
 
   otpGenerate:()=>{
        return Math.floor(Math.random() * 1000000);
    },
-   createJwtToken: (payload) => {
+    createJwtToken: (payload) => {
     return jwt.sign(payload, process.env.SECRET_KEY, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
@@ -95,6 +100,37 @@ calculateTotalPrice(service, validity) {
     }
   }  
   return 0; // Return a default value if service or price is missing
-}
+},
+// Generate an API key based on partnerId and phone
+// You can customize the salt rounds according to your security requirements
+// const saltRounds = 10;
+// const apiKeyData = `${partnerId}:${phone}`;
+
+// // Generate a hash of the combined data
+// const hashedApiKey = bcrypt.hashSync(apiKeyData, saltRounds);
+
+// return hashedApiKey;
+ generateApiKey (partnerId, phone) {
+  const apiKeyData = `${partnerId}:${phone}`;
+  
+  // Use the crypto module to create a SHA-256 hash
+  const hash = crypto.createHash('sha256');
+  hash.update(apiKeyData);
+
+  // Get the hexadecimal representation of the hash
+  return hash.digest('hex');
+},
+// createJwtToken: (payload) => {
+//   return jwt.sign(payload, process.env.SECRET_KEY, {
+//     expiresIn: process.env.JWT_EXPIRES_IN,
+//   });
+// }
+
+//  encrypt(text) {
+//   const cipher = crypto.createCipheriv(algorithm, Buffer.from(key), iv);
+//   let encrypted = cipher.update(text, 'utf8', 'hex');
+//   encrypted += cipher.final('hex');
+//   return encrypted;
+// }
 
 }

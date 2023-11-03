@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 // console.log("schema>>>>>>>>>>");
 bcrypt = require('bcrypt');
 const userSchema = new mongoose.Schema({
+  profileImage:{
+   type:String,
+   default:""
+  },
   name: {
     type: String,
     required: true,
@@ -34,6 +38,9 @@ const userSchema = new mongoose.Schema({
   },
   token: { 
     type: String 
+  },
+  apiKey:{
+    type: String
   },
   userStatus: {
     type: String,
