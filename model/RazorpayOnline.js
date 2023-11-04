@@ -1,19 +1,19 @@
 const mongoose = require("mongoose");
 
 const PaymentSchema = new mongoose.Schema({
-    orderId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "order", // Reference the "order" model
-    },
+    // orderId: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "order", // Reference the "order" model
+    // },
     userId: { // Add a field for the user ID
         type: mongoose.Schema.Types.ObjectId,
         ref: "user", // Reference the "user" model
     },
-    partnerId: {
-        type: String, // Define partnerId as a string
-        required: true
-      },
-    paymentId: {
+    // partnerId: {
+    //     type: String, // Define partnerId as a string
+    //     // required: true
+    //   },
+    orderId: {
         type: String,
     },
     amount: {

@@ -22,7 +22,10 @@ router.get("/getOneUser/:userId",admin.getOneUser);
 // ===== check validity dateTime [] 7days monthly yearly life_time ] =============
 router.get("/checkValidityExpiration/:orderId",admin.checkValidityExpiration);
 
-router.post("/logo",upload.array([{ name: 'logo', maxCount: 1 },{ name: 'newLogo', maxCount: 1 }]),admin.logo);
+router.post("/logo",upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'newLogo', maxCount: 1 }]), admin.logo);
+
+// router.post("/logo",upload.fields([{ name: 'logo', maxCount: 1 },{ name: 'newLogo', maxCount: 1 }])
+// ,admin.logo);
 
 module.exports = router;
 

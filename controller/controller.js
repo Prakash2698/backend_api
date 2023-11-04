@@ -275,7 +275,6 @@ const user_login = async (req, res) => {
 
       // You should save the user after adding the token
       await user.save();
-
       res.status(200).json({ success: true, message: "Login successful", result: user });
   } catch (error) {
       console.log(error);
@@ -480,33 +479,66 @@ const profile = async (req, res) => {
     }
 }
 // ================ product order product api ===========================
-const orderProduct = async(req,res)=>{
-      try {
-        const { productId, quantity } = req.body;
-        // Retrieve product details
-        const product = await Product.findById(productId);      
-        if (!product) {
-          return res.status(404).json({ message: "Product not found" });
-        }      
-        // Calculate total price
-        const totalPrice = product.productPrice * quantity;      
-        // Create a new order
-        const order = new order_ProductModel({
-          // partnerId,
-          productId,
-          quantity,
-          totalPrice,
-        });      
-        const savedOrder = await order.save();
-        res.status(201).json(savedOrder);
-        
-      } catch (error) {
-        console.log(error);
-      }   
-  };
-// =============== service order api start ====================================
-// Define a function to calculate the total price based on the service and validity
-  
+const fetchProductPrice = async (productId) => {
+  try {
+    // Replace this with your actual database query to retrieve the product price
+    const product = await Product.findOne({ _id: productId });
+    if (!product) {
+      // Handle the case where the product is not found
+      throw new Error("Product not found");
+    }
+    // Return the price of the product  
+    return product.productPrice;
+  } catch (error) {
+    console.error("Error fetching product price:", error);
+    // Handle errors and return a default price or an error message as needed
+    throw new Error("Error fetching product price");
+  }
+};
+
+const orderProduct = async (req, res) => {
+  try {
+    const { products } = req.body;
+
+    if (!products || products.length === 0) {
+      return res.status(400).json({ success: false, message: "Products are required" });
+    }
+
+    let totalAmount = 0;
+    const productArray = [];
+
+    for (const product of products) {
+      if (!product.productId) {
+        return res.status(400).json({ success: false, message: "Each product must have a productId" });
+      }
+
+      // Replace these lines with your actual logic to fetch the product price from your database
+      const productPrice = await fetchProductPrice(product.productId);
+      const totalPrice = productPrice; // Total price is the product price for each item
+
+      totalAmount += totalPrice; // Accumulate the total amount
+
+      productArray.push({
+        productId: product.productId,
+        totalPrice: totalPrice,
+      });
+    }
+
+    const order = new order_ProductModel({
+      products: productArray,
+      totalAmount: totalAmount, // Add totalAmount to the order
+    });
+
+    const newOrder = await order.save();
+    res.status(201).json({ success: true, data: newOrder });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+
+
+
 const orderEstampService = async(req,res)=>{
     try {
         const { partnerId, serviceId, validity } = req.body;
@@ -598,7 +630,7 @@ const razorpay_create_paymentt = async(req,res)=>{
 
 const razorpay_create_payment = async (req, res) => {
     try {
-      const { amount, partnerId, description } = req.body;
+      const { amount , description } = req.body;
       // Create a Razorpay order
       const options = {
         amount: amount * 100, // Amount in paise (1 INR = 100 paise)
@@ -618,10 +650,10 @@ const razorpay_create_payment = async (req, res) => {
     // await user.save();
       // Create a Payment document in MongoDB
       const payment = new paymentModel({
-        orderId:new mongoose.Types.ObjectId(), // Generate a new ObjectId
+        // orderId:new mongoose.Types.ObjectId(), // Generate a new ObjectId
         // userId: userId,
-        partnerId: partnerId, // Use the partnerId string directly
-        paymentId: order.id,
+        // partnerId: partnerId, // Use the partnerId string directly
+        orderId: order.id,
         amount: amount,
         description: description,
       });

@@ -398,7 +398,6 @@ const e_Stamp = async (req, res) => {
             validity,
             monthly_hit,
         });
-
         await newEstamp.save();
         res.status(201).send({ success: true, newEstamp });
     } catch (error) {
@@ -499,7 +498,8 @@ const logo = async (req, res) => {
     try {
         const { name, websiteIS } = req.body;
         const logo = req.files.logo[0].path;
-        console.log(req.files);
+        // console.log(req.files);  
+        // return;
         const newLogo = req.files.newLogo[0].path ;
         const logo_Image = new logoImage({
             name,

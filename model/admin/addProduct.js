@@ -25,16 +25,6 @@ const addProduct = new mongoose.Schema({
     type: String, // Store the download link here
     required: true, // You can make it optional if needed
   },
-  // userId:{
-  //     type: mongoose.Schema.Types.ObjectId,
-  //     ref:'user'
-  
-  // },
-  // orderID:{
-  //   type: String, // or type: Number, depending on your use case
-  //   required: true, // if it's a required field
-  //   unique: true, // if you want to ensure unique order IDs
-  // },
   active: {
     type: Boolean,
     default: false
