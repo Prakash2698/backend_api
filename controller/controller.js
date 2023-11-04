@@ -100,7 +100,7 @@ const createuser = async (req, res) => {
         // Generate a unique partner ID (you can use a library like `uuid` for this)
         const partnerId = helper.generatePartnerId();
          // Hash the partnerId
-    const hashedPartnerId = bcrypt.hashSync(partnerId, 10);
+    // const hashedPartnerId = bcrypt.hashSync(partnerId, 10);
         // Check if the email already exists in the database
         const userData = await newuserSchema.findOne({ email: email } && { phone: phone });
         if (userData) {
@@ -112,7 +112,8 @@ const createuser = async (req, res) => {
             name,
             phone,
             email,
-            partnerId:hashedPartnerId, // Set the partnerId
+            partnerId,
+            // :hashedPartnerId, // Set the partnerId
             password: hashedPassword
         });
         // Save the new user to the database
@@ -195,42 +196,93 @@ const login = async (req, res) => {   // otp send on number
 
 // ============================= login end ======================================================
 // =========================== api user_login ========================================
+// const user_login = async (req, res) => {
+//     try {
+//         const { partnerId, password } = req.body;
+
+//         if (!partnerId || !password) {
+//             return res.status(400).json({ success: false, message: "Both partnerId and password are required" });
+//         }
+        
+//         const partnerIdMatch = await bcrypt.compare(partnerId, user.partnerId);
+//         console.log(partnerIdMatch);
+
+//         if (!partnerIdMatch) {
+//           return res.status(401).json({ success: false, message: "Incorrect partnerId" });
+//       }
+//         // Find the user in the database by partnerId
+//         const user = await newuserSchema.findOne({partnerId });
+//           console.log(">>>>>>>>.",user);
+//         if (!user) {
+//             return res.status(401).json({ success: false, message: "User not found" });
+//         }
+//         // console.log(user.password)
+//         // Compare the provided password with the hashed password in the database
+//         const passwordMatch = await bcrypt.compare(password, user.password);
+//         console.log("password>>>>>>>>>>>>>>>>>",passwordMatch);
+
+        
+//         // console.log(passwordMatch)
+//         if (!passwordMatch) {
+//             return res.status(401).json({ success: false, message: "Incorrect password" });
+//         }
+//          const { _id, phoneNo } = user
+//         const token = helper.createJwtToken({ _id, phoneNo });
+//         user.token = token ;
+//         user.save() 
+//         // res.send({ message: "Otp verify successfully", token: token });
+//         // You can generate a token here for authentication if needed
+//         res.status(200).json({ success: true, message: "Login successful" , result:user});
+
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({ success: false, message: "Something went wrong" });
+//     }
+// }
+
 const user_login = async (req, res) => {
-    try {
-        const { partnerId, password } = req.body;
+  try {
+      const { partnerId, password } = req.body;
 
-        if (!partnerId || !password) {
-            return res.status(400).json({ success: false, message: "Both partnerId and password are required" });
-        }
-        // Find the user in the database by partnerId
-        const user = await newuserSchema.findOne({partnerId });
-        //   console.log(">>>>>>>>.",user);
-        if (!user) {
-            return res.status(401).json({ success: false, message: "User not found" });
-        }
-        // console.log(user.password)
-        // Compare the provided password with the hashed password in the database
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        // console.log("password>>>>>>>>>>>>>>>>>",password);
-        const partnerIdMatch = await bcrypt.compare(partnerId, user.partnerId);
-        if (!partnerIdMatch) {
-          return res.status(401).json({ success: false, message: "Incorrect partnerId" });
+      if (!partnerId || !password) {
+          return res.status(400).json({ success: false, message: "Both partnerId and password are required" });
       }
-        // console.log(passwordMatch)
-        if (!passwordMatch) {
-            return res.status(401).json({ success: false, message: "Incorrect password" });
-        }
-         const { _id, phoneNo } = user
-        const token = helper.createJwtToken({ _id, phoneNo });
-        // res.send({ message: "Otp verify successfully", token: token });
-        // You can generate a token here for authentication if needed
-        res.status(200).json({ success: true, message: "Login successful" , result:user ,token});
 
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: "Something went wrong" });
-    }
+      // Find the user in the database by partnerId
+      const user = await newuserSchema.findOne({ partnerId });
+
+      if (!user) {
+          return res.status(401).json({ success: false, message: "User not found" });
+      }
+
+      // Compare the provided partnerId with the partnerId from the database
+      // const partnerIdMatch = partnerId === user.partnerId;
+
+      // if (!partnerIdMatch) {
+      //     return res.status(401).json({ success: false, message: "Incorrect partnerId" });
+      // }
+
+      // Compare the provided password with the hashed password in the database
+      const passwordMatch = await bcrypt.compare(password, user.password);
+
+      if (!passwordMatch) {
+          return res.status(401).json({ success: false, message: "Incorrect password" });
+      }
+
+      const { _id, phoneNo } = user;
+      const token = helper.createJwtToken({ _id, phoneNo });
+      user.token = token;
+
+      // You should save the user after adding the token
+      await user.save();
+
+      res.status(200).json({ success: true, message: "Login successful", result: user });
+  } catch (error) {
+      console.log(error);
+      res.status(500).json({ success: false, message: "Something went wrong" });
+  }
 }
+
 // =========================== api user_login end =====================================
 
 // ============================= verify_otp user start ===========================================
