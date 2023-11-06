@@ -2,7 +2,19 @@ var express = require("express"),
  router = express.Router();
 // ============== multer code ==================================
  const multer = require("multer");
- const upload = multer({ dest: 'uploads/' });
+//  const upload = multer({ dest: 'uploads/' });
+const path = require('path');
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const extname = path.extname(file.originalname);
+      cb(null, file.fieldname + '-' + uniqueSuffix + extname);
+    },
+  });
+  const upload = multer({ storage });
 
  const authToken = require("../middleware/auth");
 const admin = require('../controller/adminController');
@@ -13,7 +25,9 @@ router.post("/addUser",admin.adminAddUser);
 router.post("/editUser/:id",admin.adminEditUser);
 router.post("/verifyKycByAdmin/:userId",authToken,admin.verifyKycByAdmin);
 
-router.post("/addProduct",upload.single("productImage"),admin.addProduct);
+router.post("/addProduct",upload.fields([{ name: 'productImage', maxCount: 1 }]),admin.addProduct);
+// router.post("/addProduct",upload.single('productImage'),admin.addProduct);
+
 
 router.post("/addservice",admin.e_Stamp);
 router.get("/getKycDocument",admin.getKycDocument);

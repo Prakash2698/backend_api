@@ -342,11 +342,10 @@ const getbussinessA = async (req, res) => {
 
 const addProduct = async (req, res) => {
     try {
-        const { productName, category, productPrice, description, productLink } = req.body; // Destructure the request body        
-        const productImage ='uploads/' + req.file.originalname;
-        // const aadharFrontImage = req.files.aadharFrontImage[0].path;
+        const { productName, category, productPrice, description, productLink } = req.body; // Destructure the 
+        const productImage = req.files.productImage[0].path ;
         console.log(productImage);
-        console.log(req.file);
+        console.log(req.files);
         // return
         const find = await product.findOne({ productName: productName });
         if (find) {
