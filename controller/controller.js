@@ -538,7 +538,6 @@ const orderProduct = async (req, res) => {
 };
 
 
-
 const orderEstampService = async(req,res)=>{
     try {
         const { partnerId, serviceId, validity } = req.body;
@@ -569,7 +568,6 @@ const orderEstampService = async(req,res)=>{
         res.status(500).json({ error: 'Error creating service order' });
       }
 };
-
 
 //   ============== order history ========================================
 const orderHistory = async(req,res)=>{

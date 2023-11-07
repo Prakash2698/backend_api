@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: 'inactive'
 }  ,
+adminFile:{
+  type:String,
+  default:""
+},
 // kyc: {
 //   type: mongoose.Schema.Types.ObjectId,
 //   ref: 'kyc' // Reference to the 'get_profile' model

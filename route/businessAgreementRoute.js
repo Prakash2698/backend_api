@@ -8,6 +8,4 @@ const authToken = require("../middleware/auth");
  router.post("/bussiness_agreement",authToken,upload.fields([{ name: 'businessRegistrationProof', maxCount: 1 }, { name: 'business_PAN_CARD', maxCount: 1 },{ name: 'BusinessGST', maxCount: 1 }, { name: 'agreement_file', maxCount: 1 }]),businessController.bussinessA);
 
 
-
-
  module.exports = router ;

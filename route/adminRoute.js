@@ -13,6 +13,9 @@ const storage = multer.diskStorage({
       const extname = path.extname(file.originalname);
       cb(null, file.fieldname + '-' + uniqueSuffix + extname);
     },
+    // filename: function (req, file, cb) {
+    //     cb(null, file.originalname); // Keep the original file name
+    //   },
   });
   const upload = multer({ storage });
 
@@ -30,6 +33,10 @@ router.post("/addProduct",upload.fields([{ name: 'productImage', maxCount: 1 }])
 
 
 router.post("/addservice",admin.e_Stamp);
+router.get("/getclient_send_data_admin",admin.getclient_send_data);
+// ======export file for user============ table==================================
+router.post("/exportAdminFile/:userId",admin.exportAdminFile);
+
 router.get("/getKycDocument",admin.getKycDocument);
 router.get("/getbussinessA",authToken,admin.getbussinessA);
 router.get("/getOneUser/:userId",admin.getOneUser);

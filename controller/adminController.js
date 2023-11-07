@@ -13,6 +13,7 @@ const orderEstampService = require("../model/admin/orderEstamService");
 
 const bussiness_agreement = require("../model/businessAgreement");
 const logoImage = require("../model/admin/websiteSettingLOGO");
+const client_senddata = require("../model/client_send_data");
 
 
 const userget = async (req, res) => {
@@ -343,7 +344,7 @@ const getbussinessA = async (req, res) => {
 const addProduct = async (req, res) => {
     try {
         const { productName, category, productPrice, description, productLink } = req.body; // Destructure the 
-        const productImage = req.files.productImage[0].path ;
+        const productImage = req.files.productImage[0].path;
         console.log(productImage);
         console.log(req.files);
         // return
@@ -373,23 +374,6 @@ const addProduct = async (req, res) => {
 };
 // =============== addService eStamp api ======================================
 const e_Stamp = async (req, res) => {
-    // try {
-    //     const { price, perHitCharge, validity } = req.body;
-    //      // Validate the input for the "validity" field
-    //      if (!['monthly', 'yearly', 'five_years', 'life_time'].includes(validity)) {
-    //         return res.status(400).send({ success: false, error: 'Invalid validity option' });
-    //     }
-    //     const newEstamp = new modelEstamp({
-    //         price,
-    //         perHitCharge,
-    //         validity
-    //     });
-    //     await newEstamp.save();
-    //     res.status(201).send({ success: true, newEstamp });
-    // } catch (error) {
-    //     console.error(error);
-    //     res.status(500).json({ success: false, error: 'An error occurred' });
-    // }
     try {
         const { price, perHitCharge, validity, monthly_hit } = req.body;
         const newEstamp = new addService({
@@ -405,7 +389,124 @@ const e_Stamp = async (req, res) => {
         res.status(500).send({ success: false, error: 'An error occurred' });
     }
 }
+
+const getclient_send_data = async (req, res) => {
+    try {
+        const find = await client_senddata.find();
+        if (!find) {
+            res.send({ message: "client data not found" })
+        }
+        res.send({ status: 200, message: "data_found", result: find })
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
+// const exportAdminFile = async (req, res) => {
+//     try {
+//         const id = req.params._id
+//         const { status, adminFile } = req.body;
+//         // const adminFile = req.body;
+//         const find = await client_senddata.find(id)
+
+
+//         const exportfileA = new client_senddata({
+//             status,
+//             adminFile
+//         })
+//         const result = await exportfileA.save();
+//         if (result) {
+//             res.send({ status: 200, message: "sucess", result: result })
+//         }
+//     } catch (error) {
+//         console.log(error);
+//     }
+// }
+
+
+
+
 //   =============== Validity date expiration ==================================
+
+// const exportAdminFile = async (req, res) => {
+//     try {
+//         const id = req.params._id;
+//         const { status, adminFile } = req.body;
+//         console.log(adminFile);
+//         // Find the document by _id and update the status and adminFile fields
+//         const ClientSend_Data = await client_senddata.findByIdAndUpdate(id, {
+//             status,
+//         }, { new: true }); // { new: true } returns the updated document
+    
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ status: 500, message: "An error occurred" });
+//     }
+// }
+
+
+// const exportAdminFile = async (req, res) => {
+//     try {
+//         const id = req.params.userId;
+//         const { status, adminFile } = req.body;
+//         // Update the status in the client_senddata collection
+//         const updatedClientData = await client_senddata.findOneAndUpdate(id, { status }, { new: true });
+//         console.log(updatedClientData);
+//         if (!updatedClientData) {
+//             return res.status(404).json({ status: 404, message: "Client data not found" });
+//         }
+//         const user = await newuserSchema.findByIdAndUpdate({_id});
+//         console.log(user);
+//         if (!user) {
+//             return res.status(404).json({ status: 404, message: "User not found" });
+//         }
+//         // Update or insert the adminFile into the user document
+//         user.adminFile = adminFile;
+//         // Save the user document
+//         await user.save();
+
+//         res.status(200).json({ status: 200, message: "Success", result: updatedClientData });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ status: 500, message: "An error occurred" });
+//     }
+// };
+
+
+const exportAdminFile = async (req, res) => {
+    try {
+        const userId = req.params.userId; // Get the client_senddata document's _id
+        const { status, adminFile } = req.body;
+        
+        // Update the status in the client_senddata collection
+        const updatedClientData = await client_senddata.findOneAndUpdate(
+            {userId:userId}, {
+                status }, 
+                { new: true });
+                console.log(updatedClientData);
+        if (!updatedClientData) {
+            return res.status(404).json({ status: 404, message: "Client data not found" });
+        }
+        // Assuming you have a unique identifier for the user (e.g., email or userId)
+        const userIdentifier = updatedClientData.userId;
+        // Find the user by their identifier in the newuserSchema
+        const user = await newuserSchema.findOne({_id:userIdentifier});
+        if (!user) {
+            return res.status(404).json({ status: 404, message: "User not found" });
+        }
+        user.adminFile = adminFile;
+        await user.save();
+
+        res.status(200).json({ status: 200, message: "Success", result: updatedClientData });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: 500, message: "An error occurred" });
+    }
+};
+
+
+
 const checkValidityExpiration = async (req, res) => {
     try {
         const orderId = req.params.orderId;
@@ -500,7 +601,7 @@ const logo = async (req, res) => {
         const logo = req.files.logo[0].path;
         // console.log(req.files);  
         // return;
-        const newLogo = req.files.newLogo[0].path ;
+        const newLogo = req.files.newLogo[0].path;
         const logo_Image = new logoImage({
             name,
             logo,
@@ -529,6 +630,8 @@ module.exports = {
     getbussinessA,
     addProduct,
     e_Stamp,
+    getclient_send_data,
+    exportAdminFile,
     checkValidityExpiration,
     logo
 }
