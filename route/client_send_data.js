@@ -15,4 +15,6 @@ router.post("/client_send_data",authToken,upload.single('pdfImage'),clientsendda
 
 router.get("/getclient_send_data",clientsenddata.getclient_send_data);
 
+router.post("/deduct_charge_perHit/:_id",clientsenddata.deduct_charge_perHit);
+
 module.exports = router ;

@@ -1,5 +1,6 @@
 const client_senddata = require("../model/client_send_data");
-
+const perHit_Charge = require("../model/perHitCharge");
+const newuserSchema = require("../model/model");
 
 // const client_send_data = async (req, res) => {
 //     try {
@@ -31,7 +32,7 @@ const client_senddata = require("../model/client_send_data");
 // }
 
 const client_send_data = async (req, res) => {
-    try {        
+    try {
         const {
             Stamp_Duty_Value,
             First_Party_Name,
@@ -41,7 +42,7 @@ const client_send_data = async (req, res) => {
             Stamp_Duty_Paid_By,
         } = req.body;
         const user = req.user._id;
-        
+
         const pdfImage = req.file.path;
         const clientSend = new client_senddata({
             pdfImage,
@@ -78,15 +79,86 @@ const getclient_send_data = async (req, res) => {
 
 }
 
-const deduct_charge_perHit = async(req,res)=>{
+
+
+// const deduct_charge_perHit = async (req, res) => {
+//     try {
+//         //   const { userId, amount } = req.body;
+//         const userId = req.params._id;
+//         const perHitCharge = req.body;
+//         // Validate the userId and amount
+//         if (!userId || !perHitCharge) {
+//             return res.status(400).json({ success: false, msg: 'Invalid userId or perHitCharge' });
+//         }
+//         // Find the user by their userId
+//         const user = await newuserSchema.findOne({ _id: userId });
+//         if (!user) {
+//             return res.status(404).json({ success: false, msg: 'User not found' });
+//         }
+//         // Perform the "deductMoney" operation by updating the user's wallet
+//         const parsedAmount = parseFloat(perHitCharge);
+//         if (isNaN(parsedAmount)) {
+//             return res.status(400).json({ success: false, msg: 'Invalid amount format' });
+//         }
+//         const newWallet = new wallet_amount({
+//             userId: userId,
+//             addAmount: parsedAmount,
+//         });
+//         await newWallet.save();
+//         // Update the user's wallet amount
+//         user.wallet_amount -= parsedAmount;
+//         await user.save();
+
+//         return res.status(200).json({ success: true, msg: 'Money deducted successfully', user_walletAmount: user.wallet_amount });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ success: false, msg: 'An error occurred' });
+//     }
+// };
+
+const deduct_charge_perHit = async (req, res) => {
     try {
-        
+        const userId = req.params._id;
+        const perHitCharge = req.body.perHitCharge;
+
+        // Validate the userId and perHitCharge
+        if (!userId || !perHitCharge) {
+            return res.status(400).json({ success: false, msg: 'Invalid userId or perHitCharge' });
+        }
+
+        // Check if perHitCharge is a valid number
+        if (isNaN(perHitCharge) || parseFloat(perHitCharge) <= 0) {
+            return res.status(400).json({ success: false, msg: 'Invalid perHitCharge format' });
+        }
+
+        // Find the user by their userId
+        const user = await newuserSchema.findOne({ _id: userId });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: 'User not found' });
+        }
+        // Create a new PerHitCharge instance and save it to the database
+        const newPerHitCharge = new perHit_Charge({
+            userId: userId,
+            perHitCharge: perHitCharge,
+        });
+
+        await newPerHitCharge.save();
+
+        // Update the user's wallet amount
+        user.wallet_amount -= perHitCharge;
+        await user.save();
+
+        return res.status(200).json({ success: true, msg: 'Money deducted successfully', user_walletAmount: user.wallet_amount });
     } catch (error) {
-        console.log(error);
+        console.error(error);
+        res.status(500).json({ success: false, msg: 'An error occurred' });
     }
-}
+};
+
+
 
 module.exports = {
     client_send_data,
-    getclient_send_data
+    getclient_send_data,
+    deduct_charge_perHit
 }

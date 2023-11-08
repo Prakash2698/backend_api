@@ -50,5 +50,5 @@ const model_eStamp = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('eStamp', model_eStamp);
+module.exports = mongoose.model('service', model_eStamp);
 

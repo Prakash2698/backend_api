@@ -479,63 +479,49 @@ const profile = async (req, res) => {
     }
 }
 // ================ product order product api ===========================
-const fetchProductPrice = async (productId) => {
-  try {
-    // Replace this with your actual database query to retrieve the product price
-    const product = await Product.findOne({ _id: productId });
-    if (!product) {
-      // Handle the case where the product is not found
-      throw new Error("Product not found");
-    }
-    // Return the price of the product  
-    return product.productPrice;
-  } catch (error) {
-    console.error("Error fetching product price:", error);
-    // Handle errors and return a default price or an error message as needed
-    throw new Error("Error fetching product price");
-  }
-};
 
-const orderProduct = async (req, res) => {
-  try {
-    const { products } = req.body;
 
-    if (!products || products.length === 0) {
-      return res.status(400).json({ success: false, message: "Products are required" });
-    }
+// ===================== merge this api in create payment ==============
 
-    let totalAmount = 0;
-    const productArray = [];
+// const orderProduct = async (req, res) => {
+//   try {
+//     const { products } = req.body;
 
-    for (const product of products) {
-      if (!product.productId) {
-        return res.status(400).json({ success: false, message: "Each product must have a productId" });
-      }
+//     if (!products || products.length === 0) {
+//       return res.status(400).json({ success: false, message: "Products are required" });
+//     }
 
-      // Replace these lines with your actual logic to fetch the product price from your database
-      const productPrice = await fetchProductPrice(product.productId);
-      const totalPrice = productPrice; // Total price is the product price for each item
+//     let totalAmount = 0;
+//     const productArray = [];
 
-      totalAmount += totalPrice; // Accumulate the total amount
+//     for (const product of products) {
+//       if (!product.productId) {
+//         return res.status(400).json({ success: false, message: "Each product must have a productId" });
+//       }
 
-      productArray.push({
-        productId: product.productId,
-        totalPrice: totalPrice,
-      });
-    }
+//       // Replace these lines with your actual logic to fetch the product price from your database
+//       const productPrice = await fetchProductPrice(product.productId);
+//       const totalPrice = productPrice; // Total price is the product price for each item
 
-    const order = new order_ProductModel({
-      products: productArray,
-      totalAmount: totalAmount, // Add totalAmount to the order
-    });
+//       totalAmount += totalPrice; // Accumulate the total amount
 
-    const newOrder = await order.save();
-    res.status(201).json({ success: true, data: newOrder });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
-  }
-};
+//       productArray.push({
+//         productId: product.productId,
+//         totalPrice: totalPrice,
+//       });
+//     }
+//     const order = new order_ProductModel({
+//       products: productArray,
+//       totalAmount: totalAmount, // Add totalAmount to the order
+//     });
+
+//     const newOrder = await order.save();
+//     res.status(201).json({ success: true, data: newOrder });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Something went wrong" });
+//   }
+// };
 
 
 const orderEstampService = async(req,res)=>{
@@ -587,46 +573,153 @@ const razorpay = new Razorpay({
     key_secret: 'tB1CHTW3BvEb9TR06ILUCBWV',
 });
 // ============================razor_pay end ===================================
+// Function to create a Razorpay order
+// const createRazorpayOrder = async (amount) => {
+//   const options = {
+//     amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+//     currency: 'INR',
+//     receipt: 'order_rcptid_11',
+//     payment_capture: 1, // Auto-capture payment
+//   };
 
-const razorpay_create_paymentt = async(req,res)=>{
-    try {
-        const { amount, userId,partnerId, description } = req.body;    
-        // Create a Razorpay order
-        const options = {
-          amount: amount * 100, // Amount in paise (1 INR = 100 paise)
-          currency: "INR",
-          payment_capture: 1, // Auto-capture payment
-        };
+//   try {
+//     const order = await razorpay.orders.create(options);
+//     const payment = new order_ProductModel({
+//       orderId: order.id
+//     });
+//    await payment.save(); 
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+
+
+// const razorpay_create_payment = async(req,res)=>{
+//   try {
+//     const { products } = req.body;
+
+//     if (!products || products.length === 0) {
+//       return res.status(400).json({ success: false, message: 'Products are required' });
+//     }
+
+//     let totalAmount = 0;
+//     const productArray = [];
+
+//     for (const product of products) {
+//       if (!product.productId || !product.quantity) {
+//         return res.status(400).json({ success: false, message: 'Each product must have a productId and quantity' });
+//       }
+
+//       // Replace this with your logic to fetch product price from the database
+//       const productPrice = await fetchProductPrice(product.productId);
+
+//       const totalPrice = productPrice * product.quantity;
+
+//       totalAmount += totalPrice;
+
+//       productArray.push({
+//         productId: product.productId,
+//         quantity: product.quantity,
+//         totalPrice: totalPrice,
+//       });
+//     }
+//     const razorpayOrder = await createRazorpayOrder(totalAmount); // Implement this function
+//     console.log(razorpayOrder);
+//     // return
+
+//     const order = new order_ProductModel({
+//       products: productArray,
+//       totalAmount: totalAmount,
+//     });
+//     const newOrder = await order.save();
+//     res.status(201).json({ success: true, data: newOrder, razorpayOrder });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: 'Something went wrong' });
+//   }
+// }
+
+const fetchProductPrice = async (productId) => {
+  try {
+    // Replace this with your actual database query to retrieve the product price
+    const product = await Product.findOne({ _id: productId });
+    if (!product) {
+      // Handle the case where the product is not found
+      throw new Error('Product not found');
+    }
+    // Return the price of the product
+    return product.productPrice;
+  } catch (error) {
+    console.error('Error fetching product price:', error);
+    // Handle errors and return a default price or an error message as needed
+    throw new Error('Error fetching product price');
+  }
+};
+
+const createRazorpayOrder = async (amount) => {
+  const options = {
+    amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+    currency: 'INR',
+    receipt: 'order_rcptid_11',
+    payment_capture: 1,
+  };
+
+  try {
+    const order = await razorpay.orders.create(options);
+    return order.id; // Return the order ID
+  } catch (error) {
+    throw error;
+  }
+};
+
+const razorpay_create_order_and_payment = async (req, res) => {
+  try {
+    const { products, totalPrice } = req.body;
+
+    if (!products || products.length === 0 || totalPrice === undefined) {
+      return res.status(400).json({ success: false, message: 'Products and totalPrice are required' });
+    }
     
-        const order = await razorpay.orders.create(options);
-        // Generate a new ObjectId
-        const validObjectId = new mongoose.Types.ObjectId(); 
-        const validPartnerId = new mongoose.Types.ObjectId({partnerId});   
-        // Create a Payment document in MongoDB
-        const payment = new paymentModel({
-          orderId: validObjectId,
-          userId: userId,
-          partnerId:validPartnerId,
-          paymentId: order.id,
-          amount: amount,
-          description: description,
-        });
-    
-        // Save the Payment document and await the Promise
-        const savedPayment = await payment.save();
-    
-        res.status(200).json({
-          message: "Payment success",
-          payment: savedPayment,
-          razorpayOrder: order,
-        });
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "An error occurred" });
+    const productArray = [];
+    for (const product of products) {
+      if (!product.productId) {
+        return res.status(400).json({ success: false, message: 'Each product must have a productId' });
       }
-}
+      // Replace this with your logic to fetch product price from the database
+      const productPrice = await fetchProductPrice(product.productId);
+      const totalPrice = productPrice; // Calculate the total price based on the product price
+      productArray.push({
+        productId: product.productId,
+        totalPrice: totalPrice,
+      });
+    }
 
-const razorpay_create_payment = async (req, res) => {
+    // Create a Razorpay order and get the order ID
+    const razorpayOrder = await createRazorpayOrder(totalPrice);
+
+    console.log(razorpayOrder);
+
+    const order = new order_ProductModel({
+      products: productArray,
+      totalAmount: totalPrice, // Save the totalAmount
+      orderId: razorpayOrder, // Save the Razorpay order ID
+    });
+
+    const newOrder = await order.save();
+    res.status(201).json({ success: true, razorpayOrder });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Something went wrong' });
+  }
+};
+
+
+
+
+
+
+
+const razorpay_create_paymentt = async (req, res) => {
     try {
       const { amount , description } = req.body;
       // Create a Razorpay order
@@ -636,29 +729,11 @@ const razorpay_create_payment = async (req, res) => {
         payment_capture: 1, // Auto-capture payment
       };  
       const order = await razorpay.orders.create(options);
-       // Find the user by partnerId
-    // const user = await newuserSchema.findOne({ partnerId });
-    // if (!user) {
-    //   return res.status(404).json({ error: "User not found" });
-    // }
-    // // Update the user's wallet_amount
-    // user.wallet_amount -= amount;
-
-    // Save the updated user
-    // await user.save();
-      // Create a Payment document in MongoDB
       const payment = new paymentModel({
-        // orderId:new mongoose.Types.ObjectId(), // Generate a new ObjectId
-        // userId: userId,
-        // partnerId: partnerId, // Use the partnerId string directly
         orderId: order.id,
         amount: amount,
         description: description,
       });
-        // const update_wallet = await newuserSchema.findOneAndUpdate({partnerId})
-        // update_wallet.wallet_amount -= update_wallet;
-        // update_wallet.wallet_amount.save();
-      // Save the Payment document and await the Promise
       const savedPayment = await payment.save();  
       res.status(200).json({
         message: "Payment created",
@@ -876,15 +951,12 @@ const add_Money = async (req, res) => {
       // Validate the userId and amount
       if (!userId || !amount) {
         return res.status(400).json({ success: false, msg: 'Invalid userId or amount' });
-      }
-  
+      }  
       // Find the user by their userId
-      const user = await newuserSchema.findOne({ _id: userId });
-  
+      const user = await newuserSchema.findOne({ _id: userId });  
       if (!user) {
         return res.status(404).json({ success: false, msg: 'User not found' });
-      }
-  
+      }  
       // Perform the "addMoney" operation by updating the user's wallet
       const parsedAmount = parseFloat(amount);
       if (isNaN(parsedAmount)) {
@@ -1057,12 +1129,12 @@ module.exports = {
     resendOTP,
     getProduct,
     profile,
-    orderProduct, // order product
+    // orderProduct, // order product
     orderEstampService, // order service
     orderHistory,
     reset_password_request,
     reset_password_set,
-    razorpay_create_payment, // product payment
+    razorpay_create_order_and_payment, // razorpay_create_order_and_payment
     services_create_payment, //services payment 
     payment_callback,
     services_payment_success, // services_payment_success
