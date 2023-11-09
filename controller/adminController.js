@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const helper = require("../helper/helper");
 const nodemailer = require('nodemailer');
 
-const addService = require("../model/admin/modelEStamp");
+const addService = require("../model/admin/service");
 const orderEstampService = require("../model/admin/orderEstamService");
 // const bussiness_agreement = require("../model/businessAgreement");
 
@@ -375,20 +375,33 @@ const addProduct = async (req, res) => {
 // =============== addService eStamp api ======================================
 const e_Stamp = async (req, res) => {
     try {
-        const { price, perHitCharge, validity, monthly_hit } = req.body;
+        const { SName, activationPrice, validity, type ,description} = req.body;
+        
+        // Assuming that perHitCharge and hit_limit are also provided in the request
+        const { perHitCharge, hit_limit } = req.body;
+
+        // Create a new instance of the model_eStamp schema
         const newEstamp = new addService({
-            price,
-            perHitCharge,
+            SName,
+            activationPrice,
+            type: {
+                perHitCharge,
+                hit_limit,
+            },
             validity,
-            monthly_hit,
+            description
         });
+
+        // Save the new instance to the database
         await newEstamp.save();
+
         res.status(201).send({ success: true, newEstamp });
     } catch (error) {
         console.error(error);
         res.status(500).send({ success: false, error: 'An error occurred' });
     }
 }
+
 
 const getclient_send_data = async (req, res) => {
     try {

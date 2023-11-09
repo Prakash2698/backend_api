@@ -1,6 +1,6 @@
 var express = require("express"),
  router = express.Router()
-const {createuser, verifyotp, login,user_login, resendOTP,getProduct,profile,orderProduct,orderHistory,reset_password_request, reset_password_set,razorpay_create_order_and_payment,payment_callback,add_Money,notification,getNotification,loginUserchangePassword,orderEstampService,services_create_payment,services_payment_success,generate_api_key,identifyApiKey,Edit_User_profile_addImage,getServices,getOrder} = require("../controller/controller");
+const {createuser, verifyotp, login,user_login, resendOTP,getProduct,profile,orderHistory,reset_password_request, reset_password_set,razorpay_create_order_and_payment,payment_callback,add_Money,notification,getNotification,loginUserchangePassword,createOrderAPI,generate_api_key,identifyApiKey,Edit_User_profile_addImage,getServices,perHitC_createOrderAPI} = require("../controller/controller");
 const authToken = require("../middleware/auth");
 const multer  = require('multer')
 const upload = multer({ dest: 'uploads/' })
@@ -29,18 +29,15 @@ router.get("/getServices",getServices);
 // ======================================================
 
 // router.post("/orderProduct",authToken,orderProduct);  //order product
-router.post("/razorpay_create_order_and_payment",authToken,razorpay_create_order_and_payment)
-
+router.post("/razorpay_create_order_and_payment",authToken,razorpay_create_order_and_payment);
+router.post("/createOrderAPI/:_id",authToken,createOrderAPI);
+router.post("/perHitC_createOrderAPI/:_id",authToken,perHitC_createOrderAPI); // perHitCharge
 
 
 // router.post("/razorpay_create_payment",authToken,razorpay_create_payment);
 router.post("/payment_confirmed",payment_callback);
 router.get("/orderHistory",authToken,orderHistory);  // get all order
 
-
-router.post("/orderEstampService",authToken,orderEstampService);
-router.post("/services_create_payment",authToken,services_create_payment);
-router.post("/services_payment_success",authToken,services_payment_success);
 
 
 

@@ -14,14 +14,12 @@ const order_ProductModel = require("../model/user1"); // orders
 const Product = require("../model/admin/addProduct");
 const Razorpay = require('razorpay');
 const Token = require('../model/model');
-const paymentModel = require('../model/RazorpayOnline');
 const wallet_amount = require("../model/addMoney");
 const Notification = require("../model/notificationBar");
 const jwt = require('jsonwebtoken');
-const serviceOrder = require('../model/admin/orderEstamService');
-const findEstampService = require('../model/admin/modelEStamp');
-const servicePaymentCreate = require('../model/servicepaymentmodel');
-const addService = require("../model/admin/modelEStamp");
+const serviceOrder = require('../model/serviceOrder');
+const findEstampService = require('../model/admin/service');
+const orderService = require("../model/admin/service");
 
 // ============================= start Signup start ====================================
 // const createuser = async (req, res) => {
@@ -194,51 +192,8 @@ const login = async (req, res) => {   // otp send on number
     }
 }
 
-// ============================= login end ======================================================
+// ============================= login end ===========================================
 // =========================== api user_login ========================================
-// const user_login = async (req, res) => {
-//     try {
-//         const { partnerId, password } = req.body;
-
-//         if (!partnerId || !password) {
-//             return res.status(400).json({ success: false, message: "Both partnerId and password are required" });
-//         }
-        
-//         const partnerIdMatch = await bcrypt.compare(partnerId, user.partnerId);
-//         console.log(partnerIdMatch);
-
-//         if (!partnerIdMatch) {
-//           return res.status(401).json({ success: false, message: "Incorrect partnerId" });
-//       }
-//         // Find the user in the database by partnerId
-//         const user = await newuserSchema.findOne({partnerId });
-//           console.log(">>>>>>>>.",user);
-//         if (!user) {
-//             return res.status(401).json({ success: false, message: "User not found" });
-//         }
-//         // console.log(user.password)
-//         // Compare the provided password with the hashed password in the database
-//         const passwordMatch = await bcrypt.compare(password, user.password);
-//         console.log("password>>>>>>>>>>>>>>>>>",passwordMatch);
-
-        
-//         // console.log(passwordMatch)
-//         if (!passwordMatch) {
-//             return res.status(401).json({ success: false, message: "Incorrect password" });
-//         }
-//          const { _id, phoneNo } = user
-//         const token = helper.createJwtToken({ _id, phoneNo });
-//         user.token = token ;
-//         user.save() 
-//         // res.send({ message: "Otp verify successfully", token: token });
-//         // You can generate a token here for authentication if needed
-//         res.status(200).json({ success: true, message: "Login successful" , result:user});
-
-//     } catch (error) {
-//         console.log(error);
-//         res.status(500).json({ success: false, message: "Something went wrong" });
-//     }
-// }
 
 const user_login = async (req, res) => {
   try {
@@ -478,82 +433,6 @@ const profile = async (req, res) => {
         console.log(error);
     }
 }
-// ================ product order product api ===========================
-
-
-// ===================== merge this api in create payment ==============
-
-// const orderProduct = async (req, res) => {
-//   try {
-//     const { products } = req.body;
-
-//     if (!products || products.length === 0) {
-//       return res.status(400).json({ success: false, message: "Products are required" });
-//     }
-
-//     let totalAmount = 0;
-//     const productArray = [];
-
-//     for (const product of products) {
-//       if (!product.productId) {
-//         return res.status(400).json({ success: false, message: "Each product must have a productId" });
-//       }
-
-//       // Replace these lines with your actual logic to fetch the product price from your database
-//       const productPrice = await fetchProductPrice(product.productId);
-//       const totalPrice = productPrice; // Total price is the product price for each item
-
-//       totalAmount += totalPrice; // Accumulate the total amount
-
-//       productArray.push({
-//         productId: product.productId,
-//         totalPrice: totalPrice,
-//       });
-//     }
-//     const order = new order_ProductModel({
-//       products: productArray,
-//       totalAmount: totalAmount, // Add totalAmount to the order
-//     });
-
-//     const newOrder = await order.save();
-//     res.status(201).json({ success: true, data: newOrder });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: "Something went wrong" });
-//   }
-// };
-
-
-const orderEstampService = async(req,res)=>{
-    try {
-        const { partnerId, serviceId, validity } = req.body;
-    
-        // Retrieve product details
-        const service = await findEstampService.findById(serviceId);
-    
-        if (!service) {
-          return res.status(404).json({ message: "Service not found" });
-        }
-    
-        // You can calculate the totalPrice here based on the service and validity, if needed
-        const totalPrice = helper.calculateTotalPrice(service, validity);    
-        // Create a new order
-        const newServiceOrder = new serviceOrder({
-          partnerId,
-          serviceId,
-          validity,
-          totalPrice, // Uncomment this line if you calculate the total price
-        });
-    
-        // Save the service order to the database
-        const savedServiceOrder = await newServiceOrder.save();
-    
-        res.status(201).json(savedServiceOrder);
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error creating service order' });
-      }
-};
 
 //   ============== order history ========================================
 const orderHistory = async(req,res)=>{
@@ -567,77 +446,11 @@ const orderHistory = async(req,res)=>{
 // ================ PAYMENT gateway Razorpay START =========================
 
 // Create a route for initiating a payment
-// ============================= razor_pay =====================================
+// ============================= razor_pay for product start=================================
 const razorpay = new Razorpay({
     key_id: 'rzp_test_AOjY52pvdqhUEh',
     key_secret: 'tB1CHTW3BvEb9TR06ILUCBWV',
 });
-// ============================razor_pay end ===================================
-// Function to create a Razorpay order
-// const createRazorpayOrder = async (amount) => {
-//   const options = {
-//     amount: amount * 100, // Amount in paise (1 INR = 100 paise)
-//     currency: 'INR',
-//     receipt: 'order_rcptid_11',
-//     payment_capture: 1, // Auto-capture payment
-//   };
-
-//   try {
-//     const order = await razorpay.orders.create(options);
-//     const payment = new order_ProductModel({
-//       orderId: order.id
-//     });
-//    await payment.save(); 
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-
-
-// const razorpay_create_payment = async(req,res)=>{
-//   try {
-//     const { products } = req.body;
-
-//     if (!products || products.length === 0) {
-//       return res.status(400).json({ success: false, message: 'Products are required' });
-//     }
-
-//     let totalAmount = 0;
-//     const productArray = [];
-
-//     for (const product of products) {
-//       if (!product.productId || !product.quantity) {
-//         return res.status(400).json({ success: false, message: 'Each product must have a productId and quantity' });
-//       }
-
-//       // Replace this with your logic to fetch product price from the database
-//       const productPrice = await fetchProductPrice(product.productId);
-
-//       const totalPrice = productPrice * product.quantity;
-
-//       totalAmount += totalPrice;
-
-//       productArray.push({
-//         productId: product.productId,
-//         quantity: product.quantity,
-//         totalPrice: totalPrice,
-//       });
-//     }
-//     const razorpayOrder = await createRazorpayOrder(totalAmount); // Implement this function
-//     console.log(razorpayOrder);
-//     // return
-
-//     const order = new order_ProductModel({
-//       products: productArray,
-//       totalAmount: totalAmount,
-//     });
-//     const newOrder = await order.save();
-//     res.status(201).json({ success: true, data: newOrder, razorpayOrder });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: 'Something went wrong' });
-//   }
-// }
 
 const fetchProductPrice = async (productId) => {
   try {
@@ -712,39 +525,7 @@ const razorpay_create_order_and_payment = async (req, res) => {
     res.status(500).json({ success: false, message: 'Something went wrong' });
   }
 };
-
-
-
-
-
-
-
-const razorpay_create_paymentt = async (req, res) => {
-    try {
-      const { amount , description } = req.body;
-      // Create a Razorpay order
-      const options = {
-        amount: amount * 100, // Amount in paise (1 INR = 100 paise)
-        currency: "INR",
-        payment_capture: 1, // Auto-capture payment
-      };  
-      const order = await razorpay.orders.create(options);
-      const payment = new paymentModel({
-        orderId: order.id,
-        amount: amount,
-        description: description,
-      });
-      const savedPayment = await payment.save();  
-      res.status(200).json({
-        message: "Payment created",
-        payment: savedPayment,
-        razorpayOrder: order,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "An error occurred" });
-    }
-  };  
+ 
   // ======================= confirm product payment ============================
   const payment_callback = async (req, res) => {
       try {
@@ -772,155 +553,109 @@ const razorpay_create_paymentt = async (req, res) => {
         res.status(500).json({ error: 'An error occurred' });
       }
     };
+// ============================ razor_pay for product end =======================
 
-//   =================== create payment for services =========================
-const services_create_payment = async (req, res) => {
-    try {
-      const { amount, partnerId, description } = req.body;
-      // Create a Razorpay order
-      const options = {
-        amount: amount * 100, // Amount in paise (1 INR = 100 paise)
-        currency: "INR",
-        payment_capture: 1, // Auto-capture payment
-      };
-  
-      const order = await razorpay.orders.create(options);
-      const user = await newuserSchema.findOne({ partnerId });
-    console.log(">>>>>>>>>>>",user);
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    // Update the user's wallet_amount
-    user.wallet_amount -= amount;
-
-    // Save the updated user
-    await user.save();
-      // Create a Payment document in MongoDB
-      const payment = new servicePaymentCreate({
-        serviceId: new mongoose.Types.ObjectId(), // Generate a new ObjectId
-        // serviceId:serviceId,
-        partnerId: partnerId, // Use the partnerId string directly
-        paymentId: order.id,
-        amount: amount,
-        description: description,
-      });  
-      // Save the Payment document and await the Promise
-      const savedPayment = await payment.save();  
-      res.status(200).json({
-        message: "Payment success",
-        payment: savedPayment,
-        razorpayOrder: order,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "An error occurred" });
-    }
+// ===================== raszor pay for Service start ===========================
+// Helper function to create a Razorpay order
+const create_RazorpayOrder = async (amount) => {
+  const options = {
+    amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+    currency: 'INR',
+    receipt: 'order_rcptid_' + Date.now(),
+    payment_capture: 1,
   };
-  
+  try {
+    return await razorpay.orders.create(options);
+  } catch (error) {
+    throw error;
+  }
+}
 
-// const services_payment_success =async(req,res)=>{
-//     try {
-//         const paymentId = req.body;  
-//         const serviceOId = req.body._id;
-//         // Find the payment using razorpay_order_id
-//         const payment = await servicePaymentCreate.findOne({ paymentId });
-//       //   console.log(">>>>>>>>>",payment);    
-//         if (!payment) {
-//           return res.status(404).json({ error: 'Payment not found' });
-//         }  
-//         // Update the payment status to "confirmed"
-//         payment.status = 'confirmed';
-//         await payment.save();
-//         const order = await serviceOrder.findById({serviceOId});
-//         if (!order) {
-//           return res.status(404).json({ error: 'services not found' });
-//         } 
-//        order.status = 'sucess';
-//        await order.save();
+const createOrderAPI = async (req, res) => {
+  try {
+    const serviceId = req.params._id;
+    const { activationPrice, validity } = req.body;
 
-//         res.status(200).json({ message: 'payment_confirmed and services sucess' });
-//       } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'An error occurred' });
-//       }
+    const service_find_hit_limit = await orderService.findById({_id:serviceId});
+    //  const perHitCharge = service_find_hit_limit.type.perHitCharge ;
+     const limit_hit = service_find_hit_limit.type.hit_limit ;
+    // Create a Razorpay order
+    const razorpayOrder = await create_RazorpayOrder(activationPrice, serviceId);
+    // Save the order details in the database
+    const newOrder = new serviceOrder({
+      serviceId,
+      activationPrice,
+      validity,
+      // perHitCharge:req.body,
+      limit_hit,
+      orderId: razorpayOrder.id,
+    });
+    await newOrder.save();
 
-// }
-    
-// ================ PAYMENT gateway Razorpay END ==============================
+    res.status(201).json({ success: true, result: newOrder });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+};
 
-
-// ==================== Start Add_Money api ===================================
-// const add_Money = async(req,res)=>{
-//     try {
-//         const { userId, amount } = req.body;    
-//         // Validate the userId and amount
-//         if (!userId || !amount) {
-//           return res.status(400).json({ success: false, msg: 'Invalid userId or amount' });
-//         }    
-//         // Find the user by their userId
-//         const user = await newuserSchema.findOne({ _id: userId });    
-//         if (!user) {
-//           return res.status(404).json({ success: false, msg: 'User not found' });
-//         }    
-//         // Perform the "addMoney" operation by updating the user's wallet
-//         const parsedAmount = parseFloat(amount);
-//         if (isNaN(parsedAmount)) {
-//           return res.status(400).json({ success: false, msg: 'Invalid amount format' });
-//         }    
-//         // Update the wallet document associated with the user
-//         const wallet = await wallet_amount.findOne({ userId: userId });    
-//         if (!wallet) {
-//           // If the wallet document doesn't exist, create one
-//           const newWallet = new wallet_amount({
-//             userId: userId,
-//             addAmount: parsedAmount,
-//           });
-//           await newWallet.save();
-//         } else {
-//           // If the wallet document exists, update the addAmount
-//           wallet.wallet_amount += parsedAmount;
-//           await wallet.save();
-//         }    
-//         return res.status(200).json({ success: true, msg: 'Money added successfully', user_walletAmount: wallet.wallet_amount });
-//       } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ success: false, msg: 'An error occurred' });
-//       }
-// }
-
-const services_payment_success = async (req, res) => {
-    try {
-      const { paymentId, serviceOId } = req.body; // Destructure paymentId and serviceOId
-  
-      // Find the payment using the provided paymentId
-      const payment = await servicePaymentCreate.findOne({ paymentId });  
-      if (!payment) {
-        return res.status(404).json({ error: 'Payment not found' });
-      }
-  
-      // Update the payment status to "confirmed"
-      payment.status = 'confirmed';
-      await payment.save();
-  
-      // Find the service order using the provided serviceOId
-      const order = await serviceOrder.findById(serviceOId);
-  
-      if (!order) {
-        return res.status(404).json({ error: 'Service order not found' });
-      }
-      // Update the service order status to 'success'
-      order.status = 'sucess';
-      await order.save();
-  
-      res.status(200).json({ message: 'Payment confirmed and service marked as successful' });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'An error occurred' });
-    }
+// =============  perHitCharge ================================================
+const create_Razorpay_Order = async (amount) => {
+  const options = {
+    amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+    currency: 'INR',
+    receipt: 'order_rcptid_' + Date.now(),
+    payment_capture: 1,
   };
+  try {
+    return await razorpay.orders.create(options);
+  } catch (error) {
+    throw error;
+  }
+}
 
-//   =============== Validity date expiration ==================================
+const perHitC_createOrderAPI = async (req, res) => {
+  try {
+    const serviceId = req.params._id;
+    const { validity } = req.body;
+
+    // Fetch the service details, including "perHitCharge"
+    const service = await orderService.findById(serviceId);
+
+    if (!service) {
+      return res.status(404).json({ success: false, message: 'Service not found' });
+    }
+
+    const perHitCharge = service.type.perHitCharge;
+
+    // Calculate the amount based on the "perHitCharge"
+    const amount = perHitCharge;
+
+    // Create a Razorpay order
+    const razorpayOrder = await create_Razorpay_Order(amount);
+
+    // Save the order details in the database
+    const newOrder = new serviceOrder({
+      serviceId,
+      perHitCharge,
+      validity,
+      orderId: razorpayOrder.id,
+    });
+
+    await newOrder.save();
+
+    res.status(201).json({ success: true, result: newOrder });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+};
+
+
+
+// ===================== raszor pay for Service end =============================
+
+//   =============== Validity date expiration ===================================
 const checkValidityExpiration = async(req,res)=>{
     try {
         // Calculate the date 30 or 31 days ago
@@ -1129,15 +864,13 @@ module.exports = {
     resendOTP,
     getProduct,
     profile,
-    // orderProduct, // order product
-    orderEstampService, // order service
     orderHistory,
     reset_password_request,
     reset_password_set,
     razorpay_create_order_and_payment, // razorpay_create_order_and_payment
-    services_create_payment, //services payment 
+    createOrderAPI,   // monthaly
+    perHitC_createOrderAPI,    // perHit_charge
     payment_callback,
-    services_payment_success, // services_payment_success
     checkValidityExpiration,
     add_Money,
     notification,
