@@ -4,6 +4,11 @@ const clientSend = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref:'user'
   },
+  partnerId:{
+    type: String,
+    unique: true,
+    required: true
+  },
     pdfImage:{     //1
         type: String,
         // require:true

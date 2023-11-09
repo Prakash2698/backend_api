@@ -34,6 +34,7 @@ const newuserSchema = require("../model/model");
 const client_send_data = async (req, res) => {
     try {
         const {
+            partnerId,
             Stamp_Duty_Value,
             First_Party_Name,
             Second_Party_Name,
@@ -41,18 +42,20 @@ const client_send_data = async (req, res) => {
             Purpose_of_Stamp_Duty,
             Stamp_Duty_Paid_By,
         } = req.body;
-        const user = req.user._id;
+        // const user = req.user._id;
 
         const pdfImage = req.file.path;
+        
         const clientSend = new client_senddata({
             pdfImage,
+            partnerId,
             Stamp_Duty_Value,
             First_Party_Name,
             Second_Party_Name,
             Consideration_Price,
             Purpose_of_Stamp_Duty,
             Stamp_Duty_Paid_By,
-            userId: user
+            // userId: user
         });
 
         // Save the document to the database

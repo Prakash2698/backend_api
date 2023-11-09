@@ -1,6 +1,6 @@
 var express = require("express"),
  router = express.Router()
-const {createuser, verifyotp, login,user_login, resendOTP,getProduct,profile,orderHistory,reset_password_request, reset_password_set,razorpay_create_order_and_payment,payment_callback,add_Money,notification,getNotification,loginUserchangePassword,createOrderAPI,generate_api_key,identifyApiKey,Edit_User_profile_addImage,getServices,perHitC_createOrderAPI} = require("../controller/controller");
+const {createuser, verifyotp, login,user_login, resendOTP,getProduct,profile,orderHistory,reset_password_request, reset_password_set,razorpay_create_order_and_payment,payment_callback,add_Money,notification,getNotification,loginUserchangePassword,createOrderAPI,generate_api_key,identifyApiKey,Edit_User_profile_addImage,getServices,orderService_perHitCharge} = require("../controller/controller");
 const authToken = require("../middleware/auth");
 const multer  = require('multer')
 const upload = multer({ dest: 'uploads/' })
@@ -16,7 +16,8 @@ router.get("/profile/:userId",authToken,profile);
 router.post("/reset_password_request",authToken,reset_password_request);
 router.get("/reset_password_set/:token",authToken,reset_password_set);
 
-router.post("/add_Money",authToken,add_Money);
+router.post("/add_Money/:_id",authToken,add_Money);  // add money to wallet 
+
 router.post("/notification",notification);
 router.get("/getNotification/:userId",getNotification);
 router.post("/loginUserchangePassword/:userId",loginUserchangePassword);
@@ -31,7 +32,7 @@ router.get("/getServices",getServices);
 // router.post("/orderProduct",authToken,orderProduct);  //order product
 router.post("/razorpay_create_order_and_payment",authToken,razorpay_create_order_and_payment);
 router.post("/createOrderAPI/:_id",authToken,createOrderAPI);
-router.post("/perHitC_createOrderAPI/:_id",authToken,perHitC_createOrderAPI); // perHitCharge
+router.post("/orderService_perHitCharge/:_id",authToken,orderService_perHitCharge); // perHitCharge
 
 
 // router.post("/razorpay_create_payment",authToken,razorpay_create_payment);

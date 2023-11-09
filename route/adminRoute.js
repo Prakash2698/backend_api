@@ -36,7 +36,7 @@ router.post("/addservice",admin.e_Stamp);
 
 router.get("/getclient_send_data_admin",admin.getclient_send_data);
 // ======export file for user============ table==================================
-router.post("/exportAdminFile/:userId",admin.exportAdminFile);
+router.post("/exportAdminFile/:partnerId",admin.exportAdminFile);
 
 router.get("/getKycDocument",admin.getKycDocument);
 router.get("/getbussinessA",authToken,admin.getbussinessA);

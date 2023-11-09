@@ -554,9 +554,10 @@ const razorpay_create_order_and_payment = async (req, res) => {
       }
     };
 // ============================ razor_pay for product end =======================
-
+// ====================== SERVICE ===============================================
 // ===================== raszor pay for Service start ===========================
 // Helper function to create a Razorpay order
+
 const create_RazorpayOrder = async (amount) => {
   const options = {
     amount: amount * 100, // Amount in paise (1 INR = 100 paise)
@@ -571,25 +572,76 @@ const create_RazorpayOrder = async (amount) => {
   }
 }
 
+// const createOrderAPI = async (req, res) => {
+//   try {
+//     const serviceId = req.params._id;
+//     const { activationPrice, validity } = req.body;
+
+//     const service_find_hit_limit = await orderService.findById({_id:serviceId});
+//     //  const perHitCharge = service_find_hit_limit.type.perHitCharge ;
+//      const limit_hit = service_find_hit_limit.type.hit_limit ;
+//     // Create a Razorpay order
+//     const razorpayOrder = await create_RazorpayOrder(activationPrice, serviceId);
+//     // Save the order details in the database
+//     const newOrder = new serviceOrder({
+//       serviceId,
+//       activationPrice,
+//       validity,
+//       // perHitCharge:req.body,
+//       limit_hit,
+//       orderId: razorpayOrder.id,
+//     });
+//     await newOrder.save();
+
+//     res.status(201).json({ success: true, result: newOrder });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, error: 'An error occurred' });
+//   }
+// };
+
+// =============  perHitCharge ================================================
+
+
 const createOrderAPI = async (req, res) => {
   try {
     const serviceId = req.params._id;
     const { activationPrice, validity } = req.body;
 
-    const service_find_hit_limit = await orderService.findById({_id:serviceId});
-    //  const perHitCharge = service_find_hit_limit.type.perHitCharge ;
-     const limit_hit = service_find_hit_limit.type.hit_limit ;
+    const service_find_hit_limit = await orderService.findById(serviceId);
+    const perHitCharge = service_find_hit_limit.perHitCharge;
+    const limit_hit = service_find_hit_limit.limit_hit;
+
+    let expiresAt;
+
+    // Calculate the expiration date based on the validity
+    if (validity === '7days') {
+      expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    } else if (validity === 'monthly') {
+      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    } else if (validity === 'yearly') {
+      expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    } else if (validity === 'five_years') {
+      expiresAt = new Date(Date.now() + 1826 * 24 * 60 * 60 * 1000);
+    } else {
+      // For 'life_time' validity, set expiresAt to null (no expiration)
+      expiresAt = null;
+    }
+
     // Create a Razorpay order
     const razorpayOrder = await create_RazorpayOrder(activationPrice, serviceId);
+
     // Save the order details in the database
     const newOrder = new serviceOrder({
       serviceId,
       activationPrice,
-      validity,
-      // perHitCharge:req.body,
+      perHitCharge,
       limit_hit,
       orderId: razorpayOrder.id,
+      validity,
+      expiresAt,
     });
+
     await newOrder.save();
 
     res.status(201).json({ success: true, result: newOrder });
@@ -599,7 +651,7 @@ const createOrderAPI = async (req, res) => {
   }
 };
 
-// =============  perHitCharge ================================================
+
 const create_Razorpay_Order = async (amount) => {
   const options = {
     amount: amount * 100, // Amount in paise (1 INR = 100 paise)
@@ -614,48 +666,93 @@ const create_Razorpay_Order = async (amount) => {
   }
 }
 
-const perHitC_createOrderAPI = async (req, res) => {
+const orderService_perHitCharge = async (req, res) => {
   try {
     const serviceId = req.params._id;
-    const { validity } = req.body;
+    const { activationPrice, perHitCharge, validity } = req.body;
 
-    // Fetch the service details, including "perHitCharge"
-    const service = await orderService.findById(serviceId);
-
-    if (!service) {
-      return res.status(404).json({ success: false, message: 'Service not found' });
+    // Calculate expiresAt based on the validity
+    let expiresAt;
+    if (validity === '7days') {
+      expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
+    } else if (validity === 'monthly') {
+      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days in milliseconds
+    } else if (validity === 'yearly') {
+      expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 365 days in milliseconds
+    } else if (validity === 'five_years') {
+      expiresAt = new Date(Date.now() + 1826 * 24 * 60 * 60 * 1000); // Approximately 1826 days in milliseconds
+    } else {
+      // For 'life_time' validity, set expiresAt to null (no expiration)
+      expiresAt = null;
     }
-
-    const perHitCharge = service.type.perHitCharge;
-
-    // Calculate the amount based on the "perHitCharge"
-    const amount = perHitCharge;
-
     // Create a Razorpay order
-    const razorpayOrder = await create_Razorpay_Order(amount);
+    const razorpayOrder = await create_Razorpay_Order(activationPrice);
 
-    // Save the order details in the database
-    const newOrder = new serviceOrder({
+    // Create a new service order
+    const newServiceOrder = new serviceOrder({
       serviceId,
+      activationPrice,
       perHitCharge,
       validity,
       orderId: razorpayOrder.id,
+      expiresAt,
     });
-
-    await newOrder.save();
-
-    res.status(201).json({ success: true, result: newOrder });
+    // Save the service order to the database
+    await newServiceOrder.save();
+    res.status(201).json({ success: true, result: newServiceOrder });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: 'An error occurred' });
   }
-};
+}
+
+
+
+
+// const perHitC_createOrderAPI = async (req, res) => {
+//   try {
+//     const serviceId = req.params._id;
+//     const { validity } = req.body;
+
+//     // Fetch the service details, including "perHitCharge"
+//     const service = await orderService.findById(serviceId);
+
+//     if (!service) {
+//       return res.status(404).json({ success: false, message: 'Service not found' });
+//     }
+
+//     const perHitCharge = service.type.perHitCharge;
+
+//     // Calculate the amount based on the "perHitCharge"
+//     const amount = perHitCharge;
+
+//     // Create a Razorpay order
+//     const razorpayOrder = await create_Razorpay_Order(amount);
+
+//     // Save the order details in the database
+//     const newOrder = new serviceOrder({
+//       serviceId,
+//       perHitCharge,
+//       validity,
+//       orderId: razorpayOrder.id,
+//     });
+
+//     await newOrder.save();
+
+//     res.status(201).json({ success: true, result: newOrder });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, error: 'An error occurred' });
+//   }
+// };
 
 
 
 // ===================== raszor pay for Service end =============================
 
 //   =============== Validity date expiration ===================================
+
+
 const checkValidityExpiration = async(req,res)=>{
     try {
         // Calculate the date 30 or 31 days ago
@@ -679,41 +776,109 @@ const checkValidityExpiration = async(req,res)=>{
 }
   
 
-const add_Money = async (req, res) => {
-    try {
-      const { userId, amount } = req.body;
+// const add_Money = async (req, res) => {
+//     try {
+//       const { userId, amount } = req.body;
   
-      // Validate the userId and amount
-      if (!userId || !amount) {
-        return res.status(400).json({ success: false, msg: 'Invalid userId or amount' });
-      }  
-      // Find the user by their userId
-      const user = await newuserSchema.findOne({ _id: userId });  
-      if (!user) {
-        return res.status(404).json({ success: false, msg: 'User not found' });
-      }  
-      // Perform the "addMoney" operation by updating the user's wallet
-      const parsedAmount = parseFloat(amount);
-      if (isNaN(parsedAmount)) {
-        return res.status(400).json({ success: false, msg: 'Invalid amount format' });
-      }  
-      const newWallet = new wallet_amount({
-             userId: userId,
-             addAmount: parsedAmount,
-             });
-             await newWallet.save();
-      // Update the user's wallet amount
-      user.wallet_amount += parsedAmount;
-      await user.save();
+//       // Validate the userId and amount
+//       if (!userId || !amount) {
+//         return res.status(400).json({ success: false, msg: 'Invalid userId or amount' });
+//       }  
+//       // Find the user by their userId
+//       const user = await newuserSchema.findOne({ _id: userId });  
+//       if (!user) {
+//         return res.status(404).json({ success: false, msg: 'User not found' });
+//       }  
+//       // Perform the "addMoney" operation by updating the user's wallet
+//       const parsedAmount = parseFloat(amount);
+//       if (isNaN(parsedAmount)) {
+//         return res.status(400).json({ success: false, msg: 'Invalid amount format' });
+//       }  
+//       const newWallet = new wallet_amount({
+//              userId: userId,
+//              addAmount: parsedAmount,
+//              });
+//              await newWallet.save();
+//       // Update the user's wallet amount
+//       user.wallet_amount += parsedAmount;
+//       await user.save();
   
-      return res.status(200).json({ success: true, msg: 'Money added successfully', user_walletAmount: user.wallet_amount });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, msg: 'An error occurred' });
-    }
-  };
+//       return res.status(200).json({ success: true, msg: 'Money added successfully', user_walletAmount: user.wallet_amount });
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ success: false, msg: 'An error occurred' });
+//     }
+//   };
+
+
+
+
 // ================== Notification BAR api ====================================
-  const notification = async(req,res)=>{
+ 
+const add_Money = async (req, res) => {
+  try {
+    const userId = req.params._id; // Get userId from params
+    const { amount } = req.body; // Get amount from the request body
+
+    // Validate the userId and amount
+    if (!userId || !amount) {
+      return res.status(400).json({ success: false, msg: 'Invalid userId or amount' });
+    }
+
+    // Find the user by their userId
+    const user = await newuserSchema.findOne({ _id: userId });
+
+    if (!user) {
+      return res.status(404).json({ success: false, msg: 'User not found' });
+    }
+
+    // Perform the "addMoney" operation by updating the user's wallet
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount)) {
+      return res.status(400).json({ success: false, msg: 'Invalid amount format' });
+    }
+
+    // Add the amount to the user's wallet
+    user.wallet_amount += parsedAmount;
+    await user.save();
+
+    // Generate a Razorpay order ID
+    const razorpayOrder = await create_Razorpay_Order(parsedAmount);
+
+    // Save the wallet_amount history with the order ID
+    const newWallet = new wallet_amount({
+      userId: userId,
+      addAmount: parsedAmount, // Added amount is positive
+      orderId: razorpayOrder.id, // Save the order ID
+    });
+    await newWallet.save();
+    return res.status(200).json({ success: true, msg: 'Money added successfully', user_walletAmount: newWallet,wallet_Amount: user.wallet_amount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, msg: 'An error occurred' });
+  }
+};
+
+
+// const create_Razorpay_Order = async (amount) => {
+//   const options = {
+//     amount: amount * 100, // Amount in paise (1 INR = 100 paise)
+//     currency: 'INR',
+//     receipt: 'order_rcptid_' + Date.now(),
+//     payment_capture: 1,
+//   };
+
+//   try {
+//     return await razorpay.orders.create(options);
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+
+
+
+const notification = async(req,res)=>{
     try {
         const { userId, message } = req.body;
 
@@ -728,6 +893,7 @@ const add_Money = async (req, res) => {
         res.status(500).json({ success: false, error: 'An error occurred' });
       }
   }
+
   const getNotification = async(req,res)=>{
     try {
         const userId = req.params.userId;
@@ -744,6 +910,7 @@ const add_Money = async (req, res) => {
         res.status(500).json({ success: false, error: 'An error occurred' });
       }
   }
+
 // ============== if user login he change this password doing =================
 const { check, validationResult } = require('express-validator');
 const loginUserchangePassword = async(req,res)=>{
@@ -869,7 +1036,8 @@ module.exports = {
     reset_password_set,
     razorpay_create_order_and_payment, // razorpay_create_order_and_payment
     createOrderAPI,   // monthaly
-    perHitC_createOrderAPI,    // perHit_charge
+    orderService_perHitCharge,  // perHit_charge
+    // perHitC_createOrderAPI,    // perHit_charge
     payment_callback,
     checkValidityExpiration,
     add_Money,

@@ -8,6 +8,9 @@ const walletSchema =new mongoose.Schema({
   addAmount:{
     type: Number,
     default: 0,
+   },
+   orderId:{
+    type:String
    }
 })
 

@@ -418,22 +418,22 @@ const getclient_send_data = async (req, res) => {
 
 const exportAdminFile = async (req, res) => {
     try {
-        const userId = req.params.userId; // Get the client_senddata document's _id
+        const partnerId = req.params.partnerId; // Get the client_senddata document's _id
         const { status, adminFile } = req.body;
-        
+        console.log("...........",partnerId);
         // Update the status in the client_senddata collection
         const updatedClientData = await client_senddata.findOneAndUpdate(
-            {userId:userId}, {
+            {partnerId:partnerId}, {
                 status }, 
                 { new: true });
-                // console.log(updatedClientData);
+                console.log(updatedClientData);
         if (!updatedClientData) {
             return res.status(404).json({ status: 404, message: "Client data not found" });
         }
         // Assuming you have a unique identifier for the user (e.g., email or userId)
-        const userIdentifier = updatedClientData.userId;
+        const userIdentifier = updatedClientData.partnerId;
         // Find the user by their identifier in the newuserSchema
-        const user = await newuserSchema.findOne({_id:userIdentifier});
+        const user = await newuserSchema.findOne({partnerId:userIdentifier});
         if (!user) {
             return res.status(404).json({ status: 404, message: "User not found" });
         }
